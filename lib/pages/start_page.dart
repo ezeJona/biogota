@@ -1,0 +1,46 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../colors.dart';
+import '../providers/auth_user.dart';
+
+class StartPage extends HookConsumerWidget {
+  const StartPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final checkSessionState = useCallback(() async {
+      await Future.delayed(const Duration(milliseconds: 1500));
+      final authUserRes = ref.read(authUserProvider.notifier).checkSession();
+      if (!context.mounted) return;
+      if (authUserRes != null) {
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+      } else {
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+      }
+    }, [context, ref]);
+
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        checkSessionState();
+      });
+      return;
+    }, []);
+
+    return const Scaffold(
+      backgroundColor: BiogotaColors.primary,
+      body: Center(
+        child: Text(
+          "BIOGOTA",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 40,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 4,
+          ),
+        ),
+      ),
+    );
+  }
+}

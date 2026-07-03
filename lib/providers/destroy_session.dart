@@ -1,0 +1,11 @@
+// destroySession is typically called on sign out to reset session related providers.
+
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import 'app_user.dart';
+import 'auth_user.dart';
+
+void destroySession(WidgetRef ref) {
+  ref.read(appUserProvider.notifier).destroy();
+  ref.read(authUserProvider.notifier).destroy();
+}
