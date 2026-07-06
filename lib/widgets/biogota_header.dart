@@ -5,6 +5,7 @@ class BiogotaHeader extends StatelessWidget {
   final String? avatarUrl;
   final bool isDarkMode;
   final VoidCallback onThemeToggle;
+  final VoidCallback onLogout;
 
   const BiogotaHeader({
     super.key,
@@ -12,6 +13,7 @@ class BiogotaHeader extends StatelessWidget {
     this.avatarUrl,
     required this.isDarkMode,
     required this.onThemeToggle,
+    required this.onLogout,
   });
 
   @override
@@ -66,17 +68,38 @@ class BiogotaHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
-                ),
-                child: CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Colors.white24,
-                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
-                  child: avatarUrl == null ? const Icon(Icons.person, color: Colors.white) : null,
+              PopupMenuButton<String>(
+                offset: const Offset(0, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                onSelected: (value) {
+                  if (value == 'logout') {
+                    onLogout();
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Row(
+                      children: const [
+                        Icon(Icons.logout, color: Colors.redAccent, size: 20),
+                        SizedBox(width: 12),
+                        Text("Cerrar Sesión", style: TextStyle(color: Colors.redAccent)),
+                      ],
+                    ),
+                  ),
+                ],
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                  ),
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.white24,
+                    backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+                    child: avatarUrl == null ? const Icon(Icons.person, color: Colors.white) : null,
+                  ),
                 ),
               ),
             ],

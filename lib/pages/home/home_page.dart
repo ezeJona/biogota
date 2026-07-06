@@ -6,9 +6,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../providers/auth_user.dart';
 import '../../providers/app_user.dart';
 import '../../providers/destroy_session.dart';
-import '../../text_styles.dart';
-import '../../colors.dart';
 import '../../widgets/biogota_header.dart';
+import '../../widgets/biogota_nav_bar.dart';
 
 class HomePage extends HookConsumerWidget {
   const HomePage({super.key});
@@ -18,6 +17,7 @@ class HomePage extends HookConsumerWidget {
     // Hooks for state and UI
     final loading = useState<bool>(true);
     final isDarkMode = useState<bool>(false);
+    final currentNavIndex = useState<int>(1); // Inicio por defecto
 
     // Impact simulation values (Simulated real-time data)
     final waterValue = useState(45.0); // Litros
@@ -83,6 +83,10 @@ class HomePage extends HookConsumerWidget {
               avatarUrl: appUser?.avatarUrl,
               isDarkMode: isDarkMode.value,
               onThemeToggle: () => isDarkMode.value = !isDarkMode.value,
+              onLogout: () {
+                destroySession(ref);
+                Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+              },
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -95,180 +99,134 @@ class HomePage extends HookConsumerWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: primaryTextColor.withOpacity(0.7),
+                      color: primaryTextColor,
                     ),
                   ),
-              const SizedBox(height: 8),
-              // 2. GRÁFICO CENTRAL DE ARCO (Movido arriba)
-              Center(
-                child: SizedBox(
-                  height: 180,
-                  width: double.infinity,
-                  child: Stack(
-                    alignment: Alignment.bottomCenter,
-                    children: [
-                      CustomPaint(
-                        size: const Size(double.infinity, 180),
-                        painter: ConcentricArcPainter(
-                          arcs: [
-                            ArcData(0.85, Colors.blue, "💧"),
-                            ArcData(0.65, Colors.green, "☁️"),
-                            ArcData(0.45, Colors.orangeAccent, "♻️"),
-                            ArcData(0.30, Colors.orange, "⚡"),
-                          ],
-                        ),
+                  const SizedBox(height: 8),
+                  // 2. GRÁFICO CENTRAL DE ARCO (Movido arriba)
+                  Center(
+                    child: SizedBox(
+                      height: 180,
+                      width: double.infinity,
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          CustomPaint(
+                            size: const Size(double.infinity, 180),
+                            painter: ConcentricArcPainter(
+                              arcs: [
+                                ArcData(0.85, Colors.blue, "💧"),
+                                ArcData(0.65, Colors.green, "☁️"),
+                                ArcData(0.45, Colors.orangeAccent, "♻️"),
+                                ArcData(0.30, Colors.orange, "⚡"),
+                              ],
+                            ),
+                          ),
+                          // Emojis at the start of arcs
+                          Positioned(
+                            bottom: 0,
+                            left: 40,
+                            child: Row(
+                              children: const [
+                                Text("💧", style: TextStyle(fontSize: 12)),
+                                SizedBox(width: 8),
+                                Text("☁️", style: TextStyle(fontSize: 12)),
+                                SizedBox(width: 8),
+                                Text("♻️", style: TextStyle(fontSize: 12)),
+                                SizedBox(width: 8),
+                                Text("⚡", style: TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                          )
+                        ],
                       ),
-                      // Emojis at the start of arcs
-                      Positioned(
-                        bottom: 0,
-                        left: 40,
-                        child: Row(
-                          children: const [
-                            Text("💧", style: TextStyle(fontSize: 12)),
-                            SizedBox(width: 8),
-                            Text("☁️", style: TextStyle(fontSize: 12)),
-                            SizedBox(width: 8),
-                            Text("♻️", style: TextStyle(fontSize: 12)),
-                            SizedBox(width: 8),
-                            Text("⚡", style: TextStyle(fontSize: 12)),
-                          ],
-                        ),
-                      )
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Texto de Impacto (Movido abajo del gráfico)
+                  Text(
+                    "TOTAL CO₂ EVITADO",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                      color: secondaryTextColor.withOpacity(0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    formatCarbon(carbonValue.value),
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: primaryTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // 3. CUADRÍCULA 2x2 DE TARJETAS DE IMPACTO
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.3,
+                    children: [
+                      ImpactCard(
+                        title: "Agua",
+                        value: "${waterValue.value.toInt()} L",
+                        equivalence: "Equivale a 3 duchas",
+                        color: Colors.blue,
+                        icon: Icons.water_drop,
+                        cardColor: cardColor,
+                        textColor: primaryTextColor,
+                      ),
+                      ImpactCard(
+                        title: "Carbono",
+                        value: formatCarbon(carbonValue.value),
+                        equivalence: "50 km en auto evitados",
+                        color: Colors.green,
+                        icon: Icons.cloud,
+                        cardColor: cardColor,
+                        textColor: primaryTextColor,
+                      ),
+                      ImpactCard(
+                        title: "Residuos",
+                        value: "${wasteValue.value.toInt()} kg",
+                        equivalence: "120 botellas recicladas",
+                        color: Colors.orangeAccent,
+                        icon: Icons.recycling,
+                        cardColor: cardColor,
+                        textColor: primaryTextColor,
+                      ),
+                      ImpactCard(
+                        title: "Energía",
+                        value: "${energyValue.value.toInt()} kWh",
+                        equivalence: "400 cargas de móvil",
+                        color: Colors.orange,
+                        icon: Icons.bolt,
+                        cardColor: cardColor,
+                        textColor: primaryTextColor,
+                      ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-              // Texto de Impacto (Movido abajo del gráfico)
-              Text(
-                "TOTAL CO₂ EVITADO",
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                  color: secondaryTextColor.withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                formatCarbon(carbonValue.value),
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: primaryTextColor,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // 3. CUADRÍCULA 2x2 DE TARJETAS DE IMPACTO
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.3,
-                children: [
-                  ImpactCard(
-                    title: "Agua",
-                    value: "${waterValue.value.toInt()} L",
-                    equivalence: "Equivale a 3 duchas",
-                    color: Colors.blue,
-                    icon: Icons.water_drop,
-                    cardColor: cardColor,
-                    textColor: primaryTextColor,
-                  ),
-                  ImpactCard(
-                    title: "Carbono",
-                    value: formatCarbon(carbonValue.value),
-                    equivalence: "50 km en auto evitados",
-                    color: Colors.green,
-                    icon: Icons.cloud,
-                    cardColor: cardColor,
-                    textColor: primaryTextColor,
-                  ),
-                  ImpactCard(
-                    title: "Residuos",
-                    value: "${wasteValue.value.toInt()} kg",
-                    equivalence: "120 botellas recicladas",
-                    color: Colors.orangeAccent,
-                    icon: Icons.recycling,
-                    cardColor: cardColor,
-                    textColor: primaryTextColor,
-                  ),
-                  ImpactCard(
-                    title: "Energía",
-                    value: "${energyValue.value.toInt()} kWh",
-                    equivalence: "400 cargas de móvil",
-                    color: Colors.orange,
-                    icon: Icons.bolt,
-                    cardColor: cardColor,
-                    textColor: primaryTextColor,
-                  ),
+                  // Botón de cerrar sesión movido al header (avatar)
                 ],
               ),
-              const SizedBox(height: 32),
-
-              // 4. SECCIÓN DE META SEMANAL
-              Text(
-                "Meta Semanal",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: primaryTextColor,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    WeeklyGoalItem(day: "L", progress: 1.0),
-                    WeeklyGoalItem(day: "M", progress: 0.8),
-                    WeeklyGoalItem(day: "M", progress: 1.0),
-                    WeeklyGoalItem(day: "J", progress: 0.4, isToday: true),
-                    WeeklyGoalItem(day: "V", progress: 0.0),
-                    WeeklyGoalItem(day: "S", progress: 0.0),
-                    WeeklyGoalItem(day: "D", progress: 0.0),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // Logout button (keep existing functionality)
-              Center(
-                child: TextButton.icon(
-                  onPressed: () {
-                    destroySession(ref);
-                    Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
-                  },
-                  icon: const Icon(Icons.logout, color: Colors.redAccent),
-                  label: const Text(
-                    "Cerrar Sesión",
-                    style: TextStyle(color: Colors.redAccent),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
-    ),
-  ),
-);
+      ),
+      bottomNavigationBar: BiogotaNavBar(
+        currentIndex: currentNavIndex.value,
+        isDarkMode: isDarkMode.value,
+        onTap: (index) => currentNavIndex.value = index,
+      ),
+    );
   }
 }
 
