@@ -1,4 +1,4 @@
-package com.hospired.app
+package com.biogota.app
 
 import io.flutter.embedding.android.FlutterActivity
 
