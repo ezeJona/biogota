@@ -8,6 +8,7 @@ import '../../providers/app_user.dart';
 import '../../providers/destroy_session.dart';
 import '../../text_styles.dart';
 import '../../colors.dart';
+import '../../widgets/biogota_header.dart';
 
 class HomePage extends HookConsumerWidget {
   const HomePage({super.key});
@@ -73,68 +74,32 @@ class HomePage extends HookConsumerWidget {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. HEADER Y RESUMEN DE IMPACTO
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // HEADER REUTILIZABLE
+            BiogotaHeader(
+              firstName: appUser?.firstName ?? 'Eco-héroe',
+              avatarUrl: appUser?.avatarUrl,
+              isDarkMode: isDarkMode.value,
+              onThemeToggle: () => isDarkMode.value = !isDarkMode.value,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Impacto Colectivo',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: primaryTextColor,
-                          fontFamily: 'Roboto',
-                        ),
-                      ),
-                      Text(
-                        '¡Hola, ${appUser?.firstName ?? 'Eco-héroe'}!',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    onPressed: () => isDarkMode.value = !isDarkMode.value,
-                    icon: Icon(
-                      isDarkMode.value ? Icons.light_mode : Icons.dark_mode,
-                      color: primaryTextColor,
+                  const SizedBox(height: 8),
+                  Text(
+                    'Impacto Colectivo',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: primaryTextColor.withOpacity(0.7),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                "TOTAL CO₂ EVITADO",
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                  color: secondaryTextColor.withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                formatCarbon(carbonValue.value),
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: primaryTextColor,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 2. GRÁFICO CENTRAL DE ARCO
+              const SizedBox(height: 8),
+              // 2. GRÁFICO CENTRAL DE ARCO (Movido arriba)
               Center(
                 child: SizedBox(
                   height: 180,
@@ -171,6 +136,27 @@ class HomePage extends HookConsumerWidget {
                       )
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Texto de Impacto (Movido abajo del gráfico)
+              Text(
+                "TOTAL CO₂ EVITADO",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  color: secondaryTextColor.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                formatCarbon(carbonValue.value),
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: primaryTextColor,
                 ),
               ),
               const SizedBox(height: 32),
@@ -279,8 +265,10 @@ class HomePage extends HookConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
   }
 }
 
