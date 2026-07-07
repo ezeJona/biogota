@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class BiogotaHeader extends StatelessWidget {
   final String firstName;
+  final String? subtitle;
   final String? avatarUrl;
   final bool isDarkMode;
   final VoidCallback onThemeToggle;
@@ -10,6 +11,7 @@ class BiogotaHeader extends StatelessWidget {
   const BiogotaHeader({
     super.key,
     required this.firstName,
+    this.subtitle,
     this.avatarUrl,
     required this.isDarkMode,
     required this.onThemeToggle,
@@ -41,7 +43,7 @@ class BiogotaHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Hello!",
+                subtitle ?? "Hello!",
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.8),
                   fontSize: 16,
