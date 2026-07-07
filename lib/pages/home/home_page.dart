@@ -17,7 +17,7 @@ class HomePage extends HookConsumerWidget {
     // Hooks for state and UI
     final loading = useState<bool>(true);
     final isDarkMode = useState<bool>(false);
-    final currentNavIndex = useState<int>(1); // Inicio por defecto
+    final currentNavIndex = useState<int>(2); // Inicio por defecto (ahora es el índice 2)
 
     // Impact simulation values (Simulated real-time data)
     final waterValue = useState(45.0); // Litros

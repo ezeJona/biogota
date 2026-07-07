@@ -39,26 +39,42 @@ class BiogotaNavBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _NavBarItem(
-              icon: Icons.track_changes,
-              label: "Meta",
+              icon: Icons.water_drop_outlined,
+              label: "Agua",
               isActive: currentIndex == 0,
-              activeColor: activeColor,
+              activeColor: Colors.blue,
               inactiveColor: inactiveColor,
               onTap: () => onTap(0),
             ),
+            _NavBarItem(
+              icon: Icons.recycling_outlined,
+              label: "Reciclaje",
+              isActive: currentIndex == 1,
+              activeColor: Colors.green,
+              inactiveColor: inactiveColor,
+              onTap: () => onTap(1),
+            ),
             _MainNavBarItem(
               icon: Icons.home_rounded,
-              isActive: currentIndex == 1,
+              isActive: currentIndex == 2,
               activeColor: activeColor,
-              onTap: () => onTap(1),
+              onTap: () => onTap(2),
+            ),
+            _NavBarItem(
+              icon: Icons.bolt_outlined,
+              label: "Energía",
+              isActive: currentIndex == 3,
+              activeColor: Colors.orange,
+              inactiveColor: inactiveColor,
+              onTap: () => onTap(3),
             ),
             _NavBarItem(
               icon: Icons.people_outline,
-              label: "Usuarios",
-              isActive: currentIndex == 2,
+              label: "Amigos",
+              isActive: currentIndex == 4,
               activeColor: activeColor,
               inactiveColor: inactiveColor,
-              onTap: () => onTap(2),
+              onTap: () => onTap(4),
             ),
           ],
         ),
@@ -95,13 +111,13 @@ class _NavBarItem extends StatelessWidget {
           Icon(
             icon,
             color: isActive ? activeColor : inactiveColor,
-            size: 26,
+            size: 24,
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               color: isActive ? activeColor : inactiveColor,
             ),
@@ -130,14 +146,14 @@ class _MainNavBarItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: activeColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
               color: activeColor.withOpacity(0.3),
-              blurRadius: 12,
+              blurRadius: 8,
               offset: const Offset(0, 4),
             ),
           ],
@@ -145,7 +161,7 @@ class _MainNavBarItem extends StatelessWidget {
         child: Icon(
           icon,
           color: Colors.white,
-          size: 28,
+          size: 26,
         ),
       ),
     );
