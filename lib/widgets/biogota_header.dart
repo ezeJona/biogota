@@ -7,6 +7,7 @@ class BiogotaHeader extends StatelessWidget {
   final bool isDarkMode;
   final VoidCallback onThemeToggle;
   final VoidCallback onLogout;
+  final List<Color>? customGradient;
 
   const BiogotaHeader({
     super.key,
@@ -16,10 +17,15 @@ class BiogotaHeader extends StatelessWidget {
     required this.isDarkMode,
     required this.onThemeToggle,
     required this.onLogout,
+    this.customGradient,
   });
 
   @override
   Widget build(BuildContext context) {
+    final defaultGradient = isDarkMode
+              ? [const Color(0xFF1E1E1E), const Color(0xFF121212)]
+              : [const Color(0xFF5D8BF4), const Color(0xFF4A71D1)];
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
@@ -27,9 +33,7 @@ class BiogotaHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDarkMode
-              ? [const Color(0xFF1E1E1E), const Color(0xFF121212)]
-              : [const Color(0xFF5D8BF4), const Color(0xFF4A71D1)],
+          colors: customGradient ?? defaultGradient,
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
