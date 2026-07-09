@@ -10,6 +10,7 @@ import '../../widgets/biogota_header.dart';
 import '../../widgets/biogota_nav_bar.dart';
 import '../water/water_page.dart';
 import '../recycling/recycling_page.dart';
+import '../energy/energy_page.dart';
 
 class HomePage extends HookConsumerWidget {
   const HomePage({super.key});
@@ -114,6 +115,11 @@ class HomePage extends HookConsumerWidget {
         carbonValue: carbonValue,
         wasteValue: wasteValue,
         energyValue: energyValue,
+      );
+    } else if (index == 3) {
+      return EnergyPage(
+        isDarkMode: isDarkMode.value,
+        onThemeToggle: () => isDarkMode.value = !isDarkMode.value,
       );
     } else {
       return Center(
