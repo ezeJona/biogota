@@ -11,6 +11,7 @@ import '../../widgets/biogota_nav_bar.dart';
 import '../water/water_page.dart';
 import '../recycling/recycling_page.dart';
 import '../energy/energy_page.dart';
+import '../friends/ranking_page.dart';
 
 class HomePage extends HookConsumerWidget {
   const HomePage({super.key});
@@ -120,6 +121,10 @@ class HomePage extends HookConsumerWidget {
       return EnergyPage(
         isDarkMode: isDarkMode.value,
         onThemeToggle: () => isDarkMode.value = !isDarkMode.value,
+      );
+    } else if (index == 4) {
+      return RankingPage(
+        isDarkMode: isDarkMode.value,
       );
     } else {
       return Center(
