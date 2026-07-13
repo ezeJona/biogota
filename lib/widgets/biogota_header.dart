@@ -4,6 +4,8 @@ class BiogotaHeader extends StatelessWidget {
   final String firstName;
   final String? subtitle;
   final String? avatarUrl;
+  final String? userName;
+  final String? email;
   final bool isDarkMode;
   final VoidCallback onThemeToggle;
   final VoidCallback onLogout;
@@ -14,6 +16,8 @@ class BiogotaHeader extends StatelessWidget {
     required this.firstName,
     this.subtitle,
     this.avatarUrl,
+    this.userName,
+    this.email,
     required this.isDarkMode,
     required this.onThemeToggle,
     required this.onLogout,
@@ -76,6 +80,7 @@ class BiogotaHeader extends StatelessWidget {
               const SizedBox(width: 8),
               PopupMenuButton<String>(
                 offset: const Offset(0, 50),
+                color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 onSelected: (value) {
                   if (value == 'logout') {
@@ -83,6 +88,34 @@ class BiogotaHeader extends StatelessWidget {
                   }
                 },
                 itemBuilder: (context) => [
+                  if (userName != null || email != null) ...[
+                    PopupMenuItem<String>(
+                      enabled: false,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (userName != null)
+                            Text(
+                              userName!,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode ? Colors.white : Colors.black87,
+                                fontSize: 14,
+                              ),
+                            ),
+                          if (email != null)
+                            Text(
+                              email!,
+                              style: TextStyle(
+                                color: isDarkMode ? Colors.white70 : Colors.black54,
+                                fontSize: 12,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                  ],
                   PopupMenuItem<String>(
                     value: 'logout',
                     child: Row(

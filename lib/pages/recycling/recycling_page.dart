@@ -5,6 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../widgets/biogota_header.dart';
 import '../../providers/app_user.dart';
+import '../../providers/auth_user.dart';
 import '../../providers/destroy_session.dart';
 
 class RecyclingPage extends HookConsumerWidget {
@@ -20,6 +21,19 @@ class RecyclingPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appUser = ref.watch(appUserProvider);
+    final authUser = ref.watch(authUserProvider);
+
+    final fullName = appUser != null
+        ? [
+      appUser.firstName,
+      if (appUser.secondName != null && appUser.secondName!.isNotEmpty)
+        appUser.secondName,
+      appUser.firstLastName,
+      if (appUser.secondLastName != null && appUser.secondLastName!.isNotEmpty)
+        appUser.secondLastName,
+    ].join(' ')
+        : 'Eco-héroe';
+
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     
     // States
@@ -40,6 +54,8 @@ class RecyclingPage extends HookConsumerWidget {
           BiogotaHeader(
             firstName: "Reciclaje",
             subtitle: "Impacto",
+            userName: fullName,
+            email: authUser?.email,
             avatarUrl: appUser?.avatarUrl,
             isDarkMode: isDarkMode,
             onThemeToggle: onThemeToggle,

@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../widgets/biogota_header.dart';
 import '../../providers/app_user.dart';
+import '../../providers/auth_user.dart';
 import '../../providers/destroy_session.dart';
+import '../../providers/water_provider.dart';
 
 class WaterPage extends HookConsumerWidget {
   final bool isDarkMode;
@@ -20,129 +23,151 @@ class WaterPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appUser = ref.watch(appUserProvider);
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
-    
-    // Simulation states
-    final waterFilledPercentage = useState(0.5); // 50% initial
-    final dailyLitres = useState(40);
-    final completedChallenges = useState(<int>{2}); // Card 3 (index 2) is completed by today
+    final authUser = ref.watch(authUserProvider);
+    final waterState = ref.watch(waterProvider);
+    final waterNotifier = ref.read(waterProvider.notifier);
 
-    // Animation controller for the wave movement
+    final fullName = appUser != null
+        ? [
+      appUser.firstName,
+      if (appUser.secondName != null && appUser.secondName!.isNotEmpty)
+        appUser.secondName,
+      appUser.firstLastName,
+      if (appUser.secondLastName != null && appUser.secondLastName!.isNotEmpty)
+        appUser.secondLastName,
+    ].join(' ')
+        : 'Eco-héroe';
+
+    final backgroundColor =
+    isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+
     final waveController = useAnimationController(
       duration: const Duration(seconds: 2),
     )..repeat();
 
-    // Scroll controller to detect movement
     final scrollController = useScrollController();
     final scrollOffset = useState(0.0);
 
     useEffect(() {
-      void listener() {
-        scrollOffset.value = scrollController.offset;
-      }
+      void listener() => scrollOffset.value = scrollController.offset;
       scrollController.addListener(listener);
       return () => scrollController.removeListener(listener);
     }, [scrollController]);
+
+    // Mostrar error puntual como snackbar sin romper la UI
+    ref.listen<WaterState>(waterProvider, (_, next) {
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    });
+
+    int countOccurrences(String subtipo) {
+      return waterState.completadosHoy.where((s) => s == subtipo).length;
+    }
 
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Column(
         children: [
-          // 1. HEADER ESPECIALIZADO
           BiogotaHeader(
             firstName: "Agua",
             subtitle: "Ahorra",
+            userName: fullName,
+            email: authUser?.email,
             avatarUrl: appUser?.avatarUrl,
             isDarkMode: isDarkMode,
             onThemeToggle: onThemeToggle,
             onLogout: () {
               destroySession(ref);
-              Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+              Navigator.pushNamedAndRemoveUntil(
+                  context, '/login', (_) => false);
             },
           ),
-          
           Expanded(
-            child: SingleChildScrollView(
+            child: waterState.cargando && waterState.completadosHoy.isEmpty
+            // Solo bloquea la UI en la carga inicial, no en cada acción
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
               controller: scrollController,
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 24, vertical: 20),
               child: Column(
                 children: [
-                  // 2. TANQUE DE IMPACTO PERSONAL (LA GOTA VIVA)
                   AnimatedBuilder(
                     animation: waveController,
                     builder: (context, child) {
                       return _ImpactTankCard(
                         isDarkMode: isDarkMode,
-                        progress: waterFilledPercentage.value,
-                        litres: dailyLitres.value,
+                        progress: waterState.progreso,
+                        litres: waterState.litrosHoy,
                         waveValue: waveController.value,
                         scrollEffect: scrollOffset.value,
                       );
                     },
                   ),
-                  
                   const SizedBox(height: 32),
-                  
-                  // 3. CATÁLOGO DE RETOS
                   _ChallengeCard(
                     id: 0,
                     title: "La Ducha Express",
                     subtitle: "+40 Litros",
-                    description: "¿Te bañaste en menos de 5 minutos?",
+                    description:
+                    "¿Te bañaste en menos de 5 minutos?",
                     icon: Icons.shower_rounded,
                     impact: 40,
                     isDarkMode: isDarkMode,
-                    isCompleted: completedChallenges.value.contains(0),
+                    isCompleted: waterState.completadosHoy
+                        .contains('ducha_express'),
+                    isRepeatable: false,
+                    count: countOccurrences('ducha_express'),
                     onTap: () {
-                      if (!completedChallenges.value.contains(0)) {
-                        HapticFeedback.heavyImpact();
-                        completedChallenges.value = {...completedChallenges.value, 0};
-                        waterFilledPercentage.value = math.min(1.0, waterFilledPercentage.value + 0.15);
-                        dailyLitres.value += 40;
-                        // Simulación de sonido de gota:
-                        // En un entorno real usaríamos: AudioPlayer().play(AssetSource('sounds/plop.mp3'));
-                      }
+                      HapticFeedback.heavyImpact();
+                      waterNotifier.completarReto('ducha_express');
                     },
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   _ChallengeCard(
                     id: 1,
                     title: "Cierre de Grifo",
                     subtitle: "+5 Litros",
-                    description: "Cerré la llave al cepillarme o lavar platos.",
+                    description:
+                    "Cerré la llave al cepillarme o lavar platos.",
                     icon: Icons.water_damage_rounded,
                     impact: 5,
                     isDarkMode: isDarkMode,
-                    isCompleted: completedChallenges.value.contains(1),
+                    isCompleted: waterState.completadosHoy
+                        .contains('cierre_grifo'),
+                    isRepeatable: true,
+                    count: countOccurrences('cierre_grifo'),
                     onTap: () {
-                      if (!completedChallenges.value.contains(1)) {
-                        HapticFeedback.lightImpact();
-                        completedChallenges.value = {...completedChallenges.value, 1};
-                        waterFilledPercentage.value = math.min(1.0, waterFilledPercentage.value + 0.05);
-                        dailyLitres.value += 5;
-                      }
+                      HapticFeedback.lightImpact();
+                      waterNotifier.completarReto('cierre_grifo');
                     },
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   _ChallengeCard(
                     id: 2,
                     title: "El Guardián del Agua",
                     subtitle: "+20 Litros",
-                    description: "Reporté una fuga o cerré llaves en la feria.",
+                    description:
+                    "Reporté una fuga o cerré llaves en la feria.",
                     icon: Icons.volunteer_activism_rounded,
                     impact: 20,
                     isDarkMode: isDarkMode,
-                    isCompleted: completedChallenges.value.contains(2),
+                    isCompleted: waterState.completadosHoy
+                        .contains('guardian_agua'),
+                    isRepeatable: true,
+                    count: countOccurrences('guardian_agua'),
                     onTap: () {
-                      // Already completed in simulation
+                      HapticFeedback.mediumImpact();
+                      waterNotifier.completarReto('guardian_agua');
                     },
                   ),
-                  
                   const SizedBox(height: 40),
                 ],
               ),
@@ -153,6 +178,8 @@ class WaterPage extends HookConsumerWidget {
     );
   }
 }
+
+// ── Clases auxiliares ─────────────────────────────────────────────────────────
 
 class _ImpactTankCard extends StatelessWidget {
   final bool isDarkMode;
@@ -190,7 +217,6 @@ class _ImpactTankCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // LA GOTA VIVA CON ANIMACIÓN DINÁMICA
           SizedBox(
             height: 160,
             width: 120,
@@ -218,7 +244,7 @@ class _ImpactTankCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              "¡Tu gota del día está a ${ (progress * 100).toInt()}%! Completa más retos para llenarla",
+              "¡Tu gota del día está al ${(progress * 100).toInt()}%! Completa más retos para llenarla",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -242,6 +268,8 @@ class _ChallengeCard extends StatelessWidget {
   final int impact;
   final bool isDarkMode;
   final bool isCompleted;
+  final bool isRepeatable;
+  final int count;
   final VoidCallback onTap;
 
   const _ChallengeCard({
@@ -253,6 +281,8 @@ class _ChallengeCard extends StatelessWidget {
     required this.impact,
     required this.isDarkMode,
     required this.isCompleted,
+    required this.isRepeatable,
+    required this.count,
     required this.onTap,
   });
 
@@ -264,7 +294,7 @@ class _ChallengeCard extends StatelessWidget {
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 300),
-      opacity: isCompleted ? 0.6 : 1.0,
+      opacity: (isCompleted && !isRepeatable) ? 0.6 : 1.0,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -280,23 +310,41 @@ class _ChallengeCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Lado Izquierdo: Icono minimalista
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Icon(
-                icon,
-                color: accentColor,
-                size: 28,
-              ),
+            Stack(
+              alignment: Alignment.topRight,
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: accentColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(icon, color: accentColor, size: 28),
+                ),
+                if (isRepeatable && count > 0)
+                  Transform.translate(
+                    offset: const Offset(8, -8),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: cardColor, width: 2),
+                      ),
+                      child: Text(
+                        "x$count",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 16),
-            
-            // Centro: Título y descripción
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,31 +378,31 @@ class _ChallengeCard extends StatelessWidget {
                 ],
               ),
             ),
-            
-            // Lado Derecho: Botón de acción
             const SizedBox(width: 8),
             GestureDetector(
-              onTap: onTap,
+              onTap: (isCompleted && !isRepeatable) ? null : onTap,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 400),
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isCompleted ? Colors.green.shade50 : accentColor,
+                  color: (isCompleted && !isRepeatable)
+                      ? Colors.green.shade50
+                      : accentColor,
                   shape: BoxShape.circle,
-                  boxShadow: isCompleted 
-                    ? null 
-                    : [
-                        BoxShadow(
-                          color: accentColor.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
+                  boxShadow: (isCompleted && !isRepeatable)
+                      ? null
+                      : [
+                    BoxShadow(
+                      color: accentColor.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
                 ),
                 child: Icon(
-                  isCompleted ? Icons.check_rounded : Icons.add_rounded,
-                  color: isCompleted ? Colors.green : Colors.white,
+                  (isCompleted && !isRepeatable) ? Icons.check_rounded : Icons.add_rounded,
+                  color: (isCompleted && !isRepeatable) ? Colors.green : Colors.white,
                   size: 26,
                 ),
               ),
@@ -393,8 +441,6 @@ class WaterDropPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final path = Path();
-    
-    // Forma de gota minimalista
     path.moveTo(size.width / 2, 0);
     path.cubicTo(
       size.width * 1.2, size.height * 0.6,
@@ -407,38 +453,35 @@ class WaterDropPainter extends CustomPainter {
       size.width / 2, 0,
     );
 
-    // Dibujar borde
     canvas.drawPath(path, paint);
-
-    // Dibujar relleno dinámico (Clipping para el líquido)
     canvas.save();
     canvas.clipPath(path);
-    
-    // Simular onda suave en la superficie con animación y efecto de scroll
+
     final wavePath = Path();
     final waveHeight = 6.0;
-    // El scroll inclina ligeramente el agua
     final tilt = (scrollOffset / 100).clamp(-0.2, 0.2);
     final yPos = size.height * (1.0 - fillPercentage);
-    
+
     wavePath.moveTo(0, yPos + (size.width * tilt));
     for (double i = 0; i <= size.width; i++) {
-      // Combinamos el tiempo (waveValue) con el movimiento horizontal para la onda
-      final wave = math.sin((i / size.width * 2 * math.pi) + (waveValue * 2 * math.pi)) * waveHeight;
+      final wave = math.sin(
+          (i / size.width * 2 * math.pi) +
+              (waveValue * 2 * math.pi)) *
+          waveHeight;
       wavePath.lineTo(i, yPos + wave + (i * tilt));
     }
     wavePath.lineTo(size.width, size.height);
     wavePath.lineTo(0, size.height);
     wavePath.close();
-    
+
     canvas.drawPath(wavePath, fillPaint);
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant WaterDropPainter oldDelegate) {
-    return oldDelegate.fillPercentage != fillPercentage || 
-           oldDelegate.waveValue != waveValue ||
-           oldDelegate.scrollOffset != scrollOffset;
+    return oldDelegate.fillPercentage != fillPercentage ||
+        oldDelegate.waveValue != waveValue ||
+        oldDelegate.scrollOffset != scrollOffset;
   }
 }

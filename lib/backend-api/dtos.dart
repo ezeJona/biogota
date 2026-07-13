@@ -154,3 +154,26 @@ class ImpactoGlobalRes {
     updatedAt: DateTime.now(),
   );
 }
+
+// Representa una acción ya registrada (para consultar retos de hoy)
+class AccionUsuarioRes {
+  final String id;
+  final String tipoAccion;
+  final String? subtipoAccion;
+  final DateTime registradoEn;
+
+  AccionUsuarioRes({
+    required this.id,
+    required this.tipoAccion,
+    this.subtipoAccion,
+    required this.registradoEn,
+  });
+
+  factory AccionUsuarioRes.fromJson(Map<String, dynamic> json) =>
+      AccionUsuarioRes(
+        id: json['id'],
+        tipoAccion: json['tipo_accion'],
+        subtipoAccion: json['subtipo_accion'],
+        registradoEn: DateTime.parse(json['registrado_en']),
+      );
+}

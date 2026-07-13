@@ -124,10 +124,28 @@ class HomePage extends HookConsumerWidget {
         required AsyncValue<ImpactoGlobalRes> impactoAsync,
       }) {
     final appUser = ref.watch(appUserProvider);
+    final authUser = ref.watch(authUserProvider);
     final isDarkModeVal = isDarkMode.value;
     final primaryTextColor = isDarkModeVal ? Colors.white : Colors.black87;
     final secondaryTextColor = isDarkModeVal ? Colors.white70 : Colors.black54;
     final cardColor = isDarkModeVal ? const Color(0xFF1E1E1E) : Colors.white;
+
+    // Nombre completo: Nombre1 + Nombre2 + Apellido1 + Apellido2
+    final fullName = appUser != null
+        ? [
+      appUser.firstName,
+      if (appUser.secondName != null && appUser.secondName!.isNotEmpty)
+        appUser.secondName,
+      appUser.firstLastName,
+      if (appUser.secondLastName != null && appUser.secondLastName!.isNotEmpty)
+        appUser.secondLastName,
+    ].join(' ')
+        : 'Eco-héroe';
+
+    // Nombre corto para el saludo: Primer Nombre + Inicial del primer Apellido
+    final shortName = appUser != null
+        ? "${appUser.firstName} ${appUser.firstLastName.isNotEmpty ? '${appUser.firstLastName[0]}.' : ''}"
+        : 'Eco-héroe';
 
     // Extraer datos del stream — mientras carga usa valores vacíos (no bloquea UI)
     final impacto = impactoAsync.valueOrNull ?? ImpactoGlobalRes.empty();
@@ -161,7 +179,9 @@ class HomePage extends HookConsumerWidget {
       child: Column(
         children: [
           BiogotaHeader(
-            firstName: appUser?.firstName ?? 'Eco-héroe',
+            firstName: shortName,
+            userName: fullName,
+            email: authUser?.email,
             avatarUrl: appUser?.avatarUrl,
             isDarkMode: isDarkModeVal,
             onThemeToggle: () => isDarkMode.value = !isDarkMode.value,
