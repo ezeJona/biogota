@@ -6,6 +6,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../providers/auth_user.dart';
 import '../../providers/app_user.dart';
 import '../../providers/destroy_session.dart';
+import '../../providers/impacto_global_provider.dart';
+import '../../backend-api/dtos.dart';
 import '../../widgets/biogota_header.dart';
 import '../../widgets/biogota_nav_bar.dart';
 import '../water/water_page.dart';
@@ -18,20 +20,15 @@ class HomePage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Hooks for state and UI
     final loading = useState<bool>(true);
     final isDarkMode = useState<bool>(false);
-    final currentNavIndex = useState<int>(2); // Inicio por defecto (ahora es el índice 2)
+    final currentNavIndex = useState<int>(2);
 
-    // Impact simulation values (Simulated real-time data)
-    final waterValue = useState(45.0); // Litros
-    final carbonValue = useState(12500.0); // Gramos
-    final wasteValue = useState(28.0); // Kilogramos
-    final energyValue = useState(35.0); // kWh
-
-    // Riverpod providers
     final appUser = ref.watch(appUserProvider);
     final authUser = ref.watch(authUserProvider);
+
+    // Suscripción al Realtime — se actualiza automáticamente
+    final impactoAsync = ref.watch(impactoGlobalProvider);
 
     final fetchAppUser = useCallback(() async {
       if (authUser != null) {
@@ -43,11 +40,10 @@ class HomePage extends HookConsumerWidget {
             Navigator.pushNamedAndRemoveUntil(
               context,
               '/setup-profile',
-              (route) => false,
+                  (route) => false,
             );
           }
-        } catch (err) {
-          // Error loading profile
+        } catch (_) {
         } finally {
           loading.value = false;
         }
@@ -66,16 +62,14 @@ class HomePage extends HookConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: isDarkMode.value ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
+      backgroundColor:
+      isDarkMode.value ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
       body: _buildBody(
-        context, 
-        currentNavIndex.value, 
-        isDarkMode, 
+        context,
+        currentNavIndex.value,
+        isDarkMode,
         ref,
-        waterValue: waterValue.value,
-        carbonValue: carbonValue.value,
-        wasteValue: wasteValue.value,
-        energyValue: energyValue.value,
+        impactoAsync: impactoAsync,
       ),
       bottomNavigationBar: BiogotaNavBar(
         currentIndex: currentNavIndex.value,
@@ -86,17 +80,12 @@ class HomePage extends HookConsumerWidget {
   }
 
   Widget _buildBody(
-    BuildContext context, 
-    int index, 
-    ValueNotifier<bool> isDarkMode, 
-    WidgetRef ref,
-    {
-      required double waterValue,
-      required double carbonValue,
-      required double wasteValue,
-      required double energyValue,
-    }
-  ) {
+      BuildContext context,
+      int index,
+      ValueNotifier<bool> isDarkMode,
+      WidgetRef ref, {
+        required AsyncValue<ImpactoGlobalRes> impactoAsync,
+      }) {
     if (index == 0) {
       return WaterPage(
         isDarkMode: isDarkMode.value,
@@ -108,54 +97,64 @@ class HomePage extends HookConsumerWidget {
         onThemeToggle: () => isDarkMode.value = !isDarkMode.value,
       );
     } else if (index == 2) {
-      return _buildHomeContent(
-        context, 
-        isDarkMode, 
-        ref,
-        waterValue: waterValue,
-        carbonValue: carbonValue,
-        wasteValue: wasteValue,
-        energyValue: energyValue,
-      );
+      return _buildHomeContent(context, isDarkMode, ref,
+          impactoAsync: impactoAsync);
     } else if (index == 3) {
       return EnergyPage(
         isDarkMode: isDarkMode.value,
         onThemeToggle: () => isDarkMode.value = !isDarkMode.value,
       );
     } else if (index == 4) {
-      return RankingPage(
-        isDarkMode: isDarkMode.value,
-      );
+      return RankingPage(isDarkMode: isDarkMode.value);
     } else {
       return Center(
         child: Text(
-          "Página $index en desarrollo", 
-          style: TextStyle(color: isDarkMode.value ? Colors.white : Colors.black)
-        )
+          "Página $index en desarrollo",
+          style: TextStyle(
+              color: isDarkMode.value ? Colors.white : Colors.black),
+        ),
       );
     }
   }
 
   Widget _buildHomeContent(
-    BuildContext context, 
-    ValueNotifier<bool> isDarkMode, 
-    WidgetRef ref,
-    {
-      required double waterValue,
-      required double carbonValue,
-      required double wasteValue,
-      required double energyValue,
-    }
-  ) {
+      BuildContext context,
+      ValueNotifier<bool> isDarkMode,
+      WidgetRef ref, {
+        required AsyncValue<ImpactoGlobalRes> impactoAsync,
+      }) {
     final appUser = ref.watch(appUserProvider);
     final isDarkModeVal = isDarkMode.value;
     final primaryTextColor = isDarkModeVal ? Colors.white : Colors.black87;
     final secondaryTextColor = isDarkModeVal ? Colors.white70 : Colors.black54;
     final cardColor = isDarkModeVal ? const Color(0xFF1E1E1E) : Colors.white;
 
+    // Extraer datos del stream — mientras carga usa valores vacíos (no bloquea UI)
+    final impacto = impactoAsync.valueOrNull ?? ImpactoGlobalRes.empty();
+
     String formatCarbon(double grams) {
       if (grams < 1000) return "${grams.toStringAsFixed(0)} g";
       return "${(grams / 1000).toStringAsFixed(1)} kg";
+    }
+
+    // Equivalencias calculadas dinámicamente
+    String equivAgua(double litros) {
+      final barriles = (litros / 200).toStringAsFixed(1);
+      return "≈ $barriles barriles de agua";
+    }
+
+    String equivCarbono(double gramos) {
+      final km = (gramos / 150).toStringAsFixed(1);
+      return "≈ $km km en auto evitados";
+    }
+
+    String equivResiduos(int unidades) {
+      return "≈ $unidades piezas fuera del basurero";
+    }
+
+    String equivEnergia(double kwh) {
+      final cargas = (kwh / 0.012).toStringAsFixed(0);
+      return "≈ $cargas cargas de smartphone";
     }
 
     return SingleChildScrollView(
@@ -168,11 +167,13 @@ class HomePage extends HookConsumerWidget {
             onThemeToggle: () => isDarkMode.value = !isDarkMode.value,
             onLogout: () {
               destroySession(ref);
-              Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+              Navigator.pushNamedAndRemoveUntil(
+                  context, '/login', (_) => false);
             },
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 24.0, vertical: 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -186,44 +187,46 @@ class HomePage extends HookConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
+
+                // Gráfico de arcos — proporciones relativas al máximo
                 Center(
                   child: SizedBox(
                     height: 180,
                     width: double.infinity,
-                    child: Stack(
-                      alignment: Alignment.bottomCenter,
-                      children: [
-                        CustomPaint(
-                          size: const Size(double.infinity, 180),
-                          painter: ConcentricArcPainter(
-                            arcs: [
-                              ArcData(0.85, Colors.blue, "💧"),
-                              ArcData(0.65, Colors.green, "☁️"),
-                              ArcData(0.45, Colors.orangeAccent, "♻️"),
-                              ArcData(0.30, Colors.orange, "⚡"),
-                            ],
+                    child: CustomPaint(
+                      size: const Size(double.infinity, 180),
+                      painter: ConcentricArcPainter(
+                        arcs: [
+                          ArcData(
+                            _normalizar(impacto.litrosAgua, 10000),
+                            Colors.blue,
+                            "💧",
                           ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          left: 40,
-                          child: Row(
-                            children: const [
-                              Text("💧", style: TextStyle(fontSize: 12)),
-                              SizedBox(width: 8),
-                              Text("☁️", style: TextStyle(fontSize: 12)),
-                              SizedBox(width: 8),
-                              Text("♻️", style: TextStyle(fontSize: 12)),
-                              SizedBox(width: 8),
-                              Text("⚡", style: TextStyle(fontSize: 12)),
-                            ],
+                          ArcData(
+                            _normalizar(impacto.gramosCo2, 50000),
+                            Colors.green,
+                            "☁️",
                           ),
-                        )
-                      ],
+                          ArcData(
+                            _normalizar(
+                                impacto.unidadesRecicladas.toDouble(), 500),
+                            Colors.orangeAccent,
+                            "♻️",
+                          ),
+                          ArcData(
+                            _normalizar(impacto.kwhEnergia, 200),
+                            Colors.orange,
+                            "⚡",
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 32),
+
+                // CO2 total destacado
                 Text(
                   "TOTAL CO₂ EVITADO",
                   style: TextStyle(
@@ -234,15 +237,27 @@ class HomePage extends HookConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  formatCarbon(carbonValue),
+
+                // Indicador de carga en tiempo real
+                impactoAsync.isLoading
+                    ? const SizedBox(
+                  height: 48,
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+                    : Text(
+                  formatCarbon(impacto.gramosCo2),
                   style: TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.bold,
                     color: primaryTextColor,
                   ),
                 ),
+
                 const SizedBox(height: 32),
+
+                // 4 bloques de impacto
                 GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -253,8 +268,8 @@ class HomePage extends HookConsumerWidget {
                   children: [
                     ImpactCard(
                       title: "Agua",
-                      value: "${waterValue.toInt()} L",
-                      equivalence: "Equivale a 3 duchas",
+                      value: "${impacto.litrosAgua.toStringAsFixed(0)} L",
+                      equivalence: equivAgua(impacto.litrosAgua),
                       color: Colors.blue,
                       icon: Icons.water_drop,
                       cardColor: cardColor,
@@ -262,8 +277,8 @@ class HomePage extends HookConsumerWidget {
                     ),
                     ImpactCard(
                       title: "Carbono",
-                      value: formatCarbon(carbonValue),
-                      equivalence: "50 km en auto evitados",
+                      value: formatCarbon(impacto.gramosCo2),
+                      equivalence: equivCarbono(impacto.gramosCo2),
                       color: Colors.green,
                       icon: Icons.cloud,
                       cardColor: cardColor,
@@ -271,8 +286,8 @@ class HomePage extends HookConsumerWidget {
                     ),
                     ImpactCard(
                       title: "Residuos",
-                      value: "${wasteValue.toInt()} kg",
-                      equivalence: "120 botellas recicladas",
+                      value: "${impacto.unidadesRecicladas} uds",
+                      equivalence: equivResiduos(impacto.unidadesRecicladas),
                       color: Colors.orangeAccent,
                       icon: Icons.recycling,
                       cardColor: cardColor,
@@ -280,8 +295,9 @@ class HomePage extends HookConsumerWidget {
                     ),
                     ImpactCard(
                       title: "Energía",
-                      value: "${energyValue.toInt()} kWh",
-                      equivalence: "400 cargas de móvil",
+                      value:
+                      "${impacto.kwhEnergia.toStringAsFixed(1)} kWh",
+                      equivalence: equivEnergia(impacto.kwhEnergia),
                       color: Colors.orange,
                       icon: Icons.bolt,
                       cardColor: cardColor,
@@ -289,42 +305,7 @@ class HomePage extends HookConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
-                Text(
-                  "Meta Semanal",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: primaryTextColor,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      WeeklyGoalItem(day: "L", progress: 1.0),
-                      WeeklyGoalItem(day: "M", progress: 0.8),
-                      WeeklyGoalItem(day: "M", progress: 1.0),
-                      WeeklyGoalItem(day: "J", progress: 0.4, isToday: true),
-                      WeeklyGoalItem(day: "V", progress: 0.0),
-                      WeeklyGoalItem(day: "S", progress: 0.0),
-                      WeeklyGoalItem(day: "D", progress: 0.0),
-                    ],
-                  ),
-                ),
+
                 const SizedBox(height: 40),
               ],
             ),
@@ -333,19 +314,25 @@ class HomePage extends HookConsumerWidget {
       ),
     );
   }
+
+  // Normaliza un valor entre 0.0 y 1.0 para el gráfico de arcos
+  static double _normalizar(double valor, double maximo) {
+    if (maximo <= 0) return 0;
+    return (valor / maximo).clamp(0.0, 1.0);
+  }
 }
+
+// ── Clases auxiliares (sin cambios) ──────────────────────────────────────────
 
 class ArcData {
   final double progress;
   final Color color;
   final String icon;
-
   ArcData(this.progress, this.color, this.icon);
 }
 
 class ConcentricArcPainter extends CustomPainter {
   final List<ArcData> arcs;
-
   ConcentricArcPainter({required this.arcs});
 
   @override
@@ -357,7 +344,7 @@ class ConcentricArcPainter extends CustomPainter {
 
     for (int i = 0; i < arcs.length; i++) {
       final radius = maxRadius - (i * (strokeWidth + spacing));
-      
+
       final bgPaint = Paint()
         ..color = arcs[i].color.withOpacity(0.1)
         ..style = PaintingStyle.stroke
@@ -467,73 +454,6 @@ class ImpactCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class WeeklyGoalItem extends StatelessWidget {
-  final String day;
-  final double progress;
-  final bool isToday;
-
-  const WeeklyGoalItem({
-    super.key,
-    required this.day,
-    required this.progress,
-    this.isToday = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: 36,
-              height: 36,
-              child: CircularProgressIndicator(
-                value: progress,
-                strokeWidth: 3,
-                backgroundColor: Colors.grey.withOpacity(0.1),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  progress >= 1.0 ? Colors.green : Colors.blueAccent,
-                ),
-              ),
-            ),
-            if (isToday)
-              Container(
-                width: 28,
-                height: 28,
-                decoration: const BoxDecoration(
-                  color: Colors.black,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    day,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              )
-            else
-              Text(
-                day,
-                style: TextStyle(
-                  color: Colors.grey[500],
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-      ],
     );
   }
 }

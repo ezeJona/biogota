@@ -87,4 +87,28 @@ class ApiService {
       throw Exception('An unexpected error occurred: $e');
     }
   }
+
+  // Carga inicial del contador global
+  static Future<ImpactoGlobalRes> getImpactoGlobal() async {
+    try {
+      final Map<String, dynamic> response = await _supabase
+          .from('impacto_global')
+          .select()
+          .eq('id', 1)
+          .single();
+      return ImpactoGlobalRes.fromJson(response);
+    } catch (e) {
+      throw Exception('Error al obtener impacto global: $e');
+    }
+  }
+
+// Stream de Realtime — emite cada vez que cambia impacto_global
+  static Stream<ImpactoGlobalRes> suscribirImpactoGlobal() {
+    return _supabase
+        .from('impacto_global')
+        .stream(primaryKey: ['id'])
+        .eq('id', 1)
+        .map((rows) => ImpactoGlobalRes.fromJson(rows.first));
+  }
+
 }

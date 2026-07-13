@@ -120,3 +120,37 @@ class CreateAppUserReq {
     "avatar_url": avatarUrl,
   };
 }
+
+class ImpactoGlobalRes {
+  final double litrosAgua;
+  final double gramosCo2;
+  final int unidadesRecicladas;
+  final double kwhEnergia;
+  final DateTime updatedAt;
+
+  ImpactoGlobalRes({
+    required this.litrosAgua,
+    required this.gramosCo2,
+    required this.unidadesRecicladas,
+    required this.kwhEnergia,
+    required this.updatedAt,
+  });
+
+  factory ImpactoGlobalRes.fromJson(Map<String, dynamic> json) =>
+      ImpactoGlobalRes(
+        litrosAgua: (json['litros_agua'] as num).toDouble(),
+        gramosCo2: (json['gramos_co2'] as num).toDouble(),
+        unidadesRecicladas: json['unidades_recicladas'] as int,
+        kwhEnergia: (json['kwh_energia'] as num).toDouble(),
+        updatedAt: DateTime.parse(json['updated_at']),
+      );
+
+  // Estado inicial mientras carga
+  factory ImpactoGlobalRes.empty() => ImpactoGlobalRes(
+    litrosAgua: 0,
+    gramosCo2: 0,
+    unidadesRecicladas: 0,
+    kwhEnergia: 0,
+    updatedAt: DateTime.now(),
+  );
+}
