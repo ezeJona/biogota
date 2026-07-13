@@ -130,7 +130,6 @@ class HomePage extends HookConsumerWidget {
     final secondaryTextColor = isDarkModeVal ? Colors.white70 : Colors.black54;
     final cardColor = isDarkModeVal ? const Color(0xFF1E1E1E) : Colors.white;
 
-    // Nombre completo: Nombre1 + Nombre2 + Apellido1 + Apellido2
     final fullName = appUser != null
         ? [
       appUser.firstName,
@@ -142,7 +141,6 @@ class HomePage extends HookConsumerWidget {
     ].join(' ')
         : 'Eco-héroe';
 
-    // Nombre corto para el saludo: Primer Nombre + Inicial del primer Apellido
     final shortName = appUser != null
         ? "${appUser.firstName} ${appUser.firstLastName.isNotEmpty ? '${appUser.firstLastName[0]}.' : ''}"
         : 'Eco-héroe';
@@ -342,7 +340,7 @@ class HomePage extends HookConsumerWidget {
   }
 }
 
-// ── Clases auxiliares (sin cambios) ──────────────────────────────────────────
+// ── Clases auxiliares
 
 class ArcData {
   final double progress;

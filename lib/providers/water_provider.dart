@@ -8,12 +8,14 @@ import 'impacto_global_provider.dart';
 class WaterState {
   final List<String> completadosHoy; // subtipos ya completados (ahora List para permitir repetidos)
   final int litrosHoy;              // suma del día del usuario
+  final int co2Hoy;                 // suma de CO2 evitado hoy por el usuario
   final bool cargando;
   final String? error;
 
   const WaterState({
     this.completadosHoy = const [],
     this.litrosHoy = 0,
+    this.co2Hoy = 0,
     this.cargando = false,
     this.error,
   });
@@ -24,12 +26,14 @@ class WaterState {
   WaterState copyWith({
     List<String>? completadosHoy,
     int? litrosHoy,
+    int? co2Hoy,
     bool? cargando,
     String? error,
   }) {
     return WaterState(
       completadosHoy: completadosHoy ?? this.completadosHoy,
       litrosHoy: litrosHoy ?? this.litrosHoy,
+      co2Hoy: co2Hoy ?? this.co2Hoy,
       cargando: cargando ?? this.cargando,
       error: error,
     );
@@ -45,6 +49,13 @@ class WaterNotifier extends StateNotifier<WaterState> {
     'ducha_express': 40,
     'cierre_grifo': 5,
     'guardian_agua': 20,
+  };
+
+  // Equivalencia de CO2 por subtipo (espejo de la BD)
+  static const Map<String, int> _co2PorSubtipo = {
+    'ducha_express': 800,
+    'cierre_grifo': 10,
+    'guardian_agua': 100,
   };
 
   // Definir cuáles retos son repetibles
@@ -65,15 +76,18 @@ class WaterNotifier extends StateNotifier<WaterState> {
         tipo: 'ducha',
       );
 
-      // Calcular litros acumulados hoy sumando cada subtipo completado
-      final litros = completados.fold<int>(
-        0,
-            (suma, subtipo) => suma + (_litrosPorSubtipo[subtipo] ?? 0),
-      );
+      // Calcular litros y CO2 acumulados hoy
+      int litros = 0;
+      int co2 = 0;
+      for (final subtipo in completados) {
+        litros += _litrosPorSubtipo[subtipo] ?? 0;
+        co2 += _co2PorSubtipo[subtipo] ?? 0;
+      }
 
       state = state.copyWith(
         completadosHoy: completados,
         litrosHoy: litros,
+        co2Hoy: co2,
         cargando: false,
       );
     } catch (e) {
@@ -93,9 +107,12 @@ class WaterNotifier extends StateNotifier<WaterState> {
 
     // Optimistic update — actualiza UI antes de esperar la BD
     final litrosExtra = _litrosPorSubtipo[subtipo] ?? 0;
+    final co2Extra = _co2PorSubtipo[subtipo] ?? 0;
+
     state = state.copyWith(
       completadosHoy: [...state.completadosHoy, subtipo],
       litrosHoy: state.litrosHoy + litrosExtra,
+      co2Hoy: state.co2Hoy + co2Extra,
     );
 
     try {
@@ -123,6 +140,7 @@ class WaterNotifier extends StateNotifier<WaterState> {
       state = state.copyWith(
         completadosHoy: nuevaLista,
         litrosHoy: state.litrosHoy - litrosExtra,
+        co2Hoy: state.co2Hoy - co2Extra,
         error: e.toString(),
       );
     }
