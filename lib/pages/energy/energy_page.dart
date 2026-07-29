@@ -7,6 +7,8 @@ import '../../providers/app_user.dart';
 import '../../providers/auth_user.dart';
 import '../../providers/destroy_session.dart';
 
+import '../../providers/energy_provider.dart';
+
 class EnergyPage extends HookConsumerWidget {
   final bool isDarkMode;
   final VoidCallback onThemeToggle;
@@ -21,6 +23,8 @@ class EnergyPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appUser = ref.watch(appUserProvider);
     final authUser = ref.watch(authUserProvider);
+    final energyState = ref.watch(energyProvider);
+    final energyNotifier = ref.read(energyProvider.notifier);
 
     final fullName = appUser != null
         ? [
@@ -34,16 +38,20 @@ class EnergyPage extends HookConsumerWidget {
         : 'Eco-héroe';
 
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
-    
-    // Simulation states
-    final energySaved = useState(0.6); // +0.6 kWh
-    final completedChallenges = useState(<int>{2}); // "Modo Eco Activo" is completed
+
+    // Escuchar errores
+    ref.listen<EnergyState>(energyProvider, (_, next) {
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.error!), backgroundColor: Colors.redAccent),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Column(
         children: [
-          // 1. HEADER (ZONA DE NAVEGACIÓN)
           BiogotaHeader(
             firstName: "Ahorro de energía",
             subtitle: "Energía",
@@ -54,7 +62,7 @@ class EnergyPage extends HookConsumerWidget {
             onThemeToggle: onThemeToggle,
             customGradient: isDarkMode 
                 ? [const Color(0xFF1E1E1E), const Color(0xFF121212)] 
-                : [const Color(0xFFFFD54F), const Color(0xFFFBC02D)],
+                : [const Color(0xFFE5D200), const Color(0xFFFBC02D)],
             onLogout: () {
               destroySession(ref);
               Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
@@ -62,21 +70,21 @@ class EnergyPage extends HookConsumerWidget {
           ),
           
           Expanded(
-            child: SingleChildScrollView(
+            child: energyState.cargando && energyState.completadosHoy.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: Column(
                 children: [
-                  // 2. EL GENERADOR DE IMPACTO (BATERÍA/RAYO VIVO)
                   _EnergyImpactCard(
                     isDarkMode: isDarkMode,
-                    progress: 0.6,
-                    kWh: energySaved.value,
+                    progress: energyState.progreso,
+                    kWh: energyState.kwhHoy,
                   ),
                   
                   const SizedBox(height: 32),
                   
-                  // Título de la sección de retos
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Padding(
@@ -92,43 +100,48 @@ class EnergyPage extends HookConsumerWidget {
                     ),
                   ),
 
-                  // 3. EL CATÁLOGO DE RETOS CON INTERRUPTORES
                   _ChallengeSwitchCard(
                     title: "Vampiros Eléctricos",
-                    impact: "+0.2 kWh por acción",
+                    impact: "+0.2 kWh",
                     icon: Icons.power_rounded,
-                    isActive: true,
+                    isActive: energyState.completadosHoy.contains('vampiros_electricos'),
                     isDarkMode: isDarkMode,
                     onChanged: (val) {
-                       HapticFeedback.mediumImpact();
+                      if (!energyState.completadosHoy.contains('vampiros_electricos')) {
+                        HapticFeedback.mediumImpact();
+                        energyNotifier.completarReto('vampiros_electricos');
+                      }
                     },
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   _ChallengeSwitchCard(
                     title: "Luz Natural",
-                    impact: "+0.1 kWh por acción",
+                    impact: "+0.2 kWh",
                     icon: Icons.wb_sunny_outlined,
-                    isActive: false,
+                    isActive: energyState.completadosHoy.contains('luz_natural'),
                     isDarkMode: isDarkMode,
                     onChanged: (val) {
-                       HapticFeedback.lightImpact();
+                      if (!energyState.completadosHoy.contains('luz_natural')) {
+                        HapticFeedback.lightImpact();
+                        energyNotifier.completarReto('luz_natural');
+                      }
                     },
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   _ChallengeSwitchCard(
                     title: "Modo Eco Activo",
-                    impact: "Reto ya validado hoy",
+                    impact: energyState.completadosHoy.contains('modo_eco') ? "Reto ya validado hoy" : "+0.2 kWh",
                     icon: Icons.eco_outlined,
-                    isActive: true,
+                    isActive: energyState.completadosHoy.contains('modo_eco'),
                     isDarkMode: isDarkMode,
-                    isDisabled: true,
-                    onChanged: (val) {},
+                    isDisabled: energyState.completadosHoy.contains('modo_eco'),
+                    onChanged: (val) {
+                      if (!energyState.completadosHoy.contains('modo_eco')) {
+                        HapticFeedback.mediumImpact();
+                        energyNotifier.completarReto('modo_eco');
+                      }
+                    },
                   ),
-                  
                   const SizedBox(height: 40),
                 ],
               ),

@@ -8,6 +8,8 @@ import '../../providers/app_user.dart';
 import '../../providers/auth_user.dart';
 import '../../providers/destroy_session.dart';
 
+import '../../providers/recycling_provider.dart';
+
 class RecyclingPage extends HookConsumerWidget {
   final bool isDarkMode;
   final VoidCallback onThemeToggle;
@@ -22,6 +24,8 @@ class RecyclingPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appUser = ref.watch(appUserProvider);
     final authUser = ref.watch(authUserProvider);
+    final recyclingState = ref.watch(recyclingProvider);
+    final recyclingNotifier = ref.read(recyclingProvider.notifier);
 
     final fullName = appUser != null
         ? [
@@ -36,12 +40,17 @@ class RecyclingPage extends HookConsumerWidget {
 
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     
-    // States
-    final fillPercentage = useState(0.4); // 40% initial
-    final co2Avoided = useState(252);
-    final materialsCount = useState(3);
-    final petCount = useState(3);
-    final isDesechablesCompleted = useState(false);
+    // States locales para el contador antes de registrar
+    final petCount = useState(0);
+
+    // Escuchar errores
+    ref.listen<RecyclingState>(recyclingProvider, (_, next) {
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.error!), backgroundColor: Colors.redAccent),
+        );
+      }
+    });
 
     final greenGradient = isDarkMode 
         ? [const Color(0xFF1E1E1E), const Color(0xFF121212)]
@@ -67,22 +76,22 @@ class RecyclingPage extends HookConsumerWidget {
           ),
           
           Expanded(
-            child: SingleChildScrollView(
+            child: recyclingState.cargando && recyclingState.completadosHoy.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 children: [
-                  // 2. EL ECO-CONTENEDOR DE IMPACTO DUAL
                   _EcoImpactCard(
                     isDarkMode: isDarkMode,
-                    progress: fillPercentage.value,
-                    co2: co2Avoided.value,
-                    materials: materialsCount.value,
+                    progress: recyclingState.progreso,
+                    co2: recyclingState.co2Hoy,
+                    materials: recyclingState.materialesHoy,
                   ),
                   
                   const SizedBox(height: 32),
                   
-                  // 3. CATÁLOGOS DE RETOS E INCREMENTADORES
                   _IncrementalChallengeCard(
                     title: "PET y Aluminio",
                     subtitle: "+84g CO₂ por pieza",
@@ -94,9 +103,7 @@ class RecyclingPage extends HookConsumerWidget {
                     onRegister: () {
                       if (petCount.value > 0) {
                         HapticFeedback.mediumImpact();
-                        co2Avoided.value += petCount.value * 84;
-                        materialsCount.value += petCount.value;
-                        fillPercentage.value = math.min(1.0, fillPercentage.value + (petCount.value * 0.05));
+                        recyclingNotifier.completarReto('pet_aluminio', cantidad: petCount.value);
                         petCount.value = 0;
                       }
                     },
@@ -110,23 +117,13 @@ class RecyclingPage extends HookConsumerWidget {
                     description: "Traje mi termo reutilizable",
                     icon: Icons.eco_rounded,
                     isDarkMode: isDarkMode,
-                    isCompleted: isDesechablesCompleted.value,
+                    isCompleted: recyclingState.completadosHoy.contains('cero_desechables'),
                     onTap: () {
-                      if (!isDesechablesCompleted.value) {
+                      if (!recyclingState.completadosHoy.contains('cero_desechables')) {
                         HapticFeedback.heavyImpact();
-                        isDesechablesCompleted.value = true;
-                        co2Avoided.value += 120;
-                        materialsCount.value += 1;
-                        fillPercentage.value = math.min(1.0, fillPercentage.value + 0.1);
+                        recyclingNotifier.completarReto('cero_desechables');
                       }
                     },
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  _CompletedChallengeCard(
-                    title: "¡Patrulla Limpia completada!",
-                    isDarkMode: isDarkMode,
                   ),
                   
                   const SizedBox(height: 40),

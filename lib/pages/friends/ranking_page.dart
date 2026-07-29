@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../providers/app_user.dart';
 
+import '../../providers/ranking_provider.dart';
+
 class RankingPage extends HookConsumerWidget {
   final bool isDarkMode;
 
@@ -13,6 +15,8 @@ class RankingPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appUser = ref.watch(appUserProvider);
+    final rankingAsync = ref.watch(rankingProvider);
+    
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     final primaryTextColor = isDarkMode ? Colors.white : const Color(0xFF121212);
     final secondaryTextColor = isDarkMode ? Colors.white70 : Colors.black54;
@@ -21,123 +25,200 @@ class RankingPage extends HookConsumerWidget {
       backgroundColor: backgroundColor,
       body: SafeArea(
         bottom: false,
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: rankingAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => Center(child: Text("Error al cargar ranking: $err")),
+          data: (ranking) {
+            // El podio son los primeros 3
+            final podium = ranking.take(3).toList();
+            final others = ranking.skip(3).toList();
+            
+            // Encontrar al usuario actual en el ranking completo para su tarjeta fija
+            final currentUserRank = ranking.indexWhere((u) => u.id == appUser?.id);
+            final userPosition = currentUserRank != -1 ? ranking[currentUserRank].posicion : 0;
+            final userPoints = currentUserRank != -1 ? ranking[currentUserRank].puntos : (appUser?.puntos ?? 0);
+
+            return Stack(
               children: [
-                // 1. HEADER
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Tabla de Posiciones",
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: primaryTextColor,
-                          letterSpacing: -0.5,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Tabla de Posiciones",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              color: primaryTextColor,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Feria Comunitaria ECOTON",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: secondaryTextColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () => ref.refresh(rankingProvider.future),
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.only(bottom: 100),
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 32),
+                              
+                              if (podium.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      // 2do Lugar
+                                      if (podium.length > 1)
+                                        _PodiumItem(
+                                          rank: 2,
+                                          name: podium[1].firstName,
+                                          points: podium[1].puntos.toString(),
+                                          color: const Color(0xFFC0C0C0),
+                                          height: 140,
+                                          isDarkMode: isDarkMode,
+                                          avatarUrl: podium[1].avatarUrl,
+                                        ),
+                                      // 1er Lugar
+                                      _PodiumItem(
+                                        rank: 1,
+                                        name: podium[0].firstName,
+                                        points: podium[0].puntos.toString(),
+                                        color: const Color(0xFFFFD700),
+                                        height: 180,
+                                        isDarkMode: isDarkMode,
+                                        hasCrown: true,
+                                        avatarUrl: podium[0].avatarUrl,
+                                      ),
+                                      // 3er Lugar
+                                      if (podium.length > 2)
+                                        _PodiumItem(
+                                          rank: 3,
+                                          name: podium[2].firstName,
+                                          points: podium[2].puntos.toString(),
+                                          color: const Color(0xFFCD7F32),
+                                          height: 120,
+                                          isDarkMode: isDarkMode,
+                                          avatarUrl: podium[2].avatarUrl,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+
+                              const SizedBox(height: 40),
+
+                              if (others.isNotEmpty)
+                                Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                                  decoration: BoxDecoration(
+                                    color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                                    borderRadius: BorderRadius.circular(32),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.03),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 10),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ListView.separated(
+                                    shrinkWrap: true,
+                                    padding: const EdgeInsets.all(8),
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: others.length,
+                                    separatorBuilder: (context, index) => Divider(
+                                      color: isDarkMode ? Colors.white10 : Colors.black.withOpacity(0.05),
+                                      height: 1,
+                                      indent: 20,
+                                      endIndent: 20,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      final user = others[index];
+                                      return _RankListItem(
+                                        position: user.posicion,
+                                        name: "${user.firstName} ${user.firstLastName}",
+                                        degree: "Participante",
+                                        points: user.puntos.toString(),
+                                        isDarkMode: isDarkMode,
+                                        avatarUrl: user.avatarUrl,
+                                      );
+                                    },
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Feria Comunitaria ECOTON",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: secondaryTextColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
 
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.only(bottom: 100),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 32),
-                        
-                        // 2. EL PÓDIUM DE HONOR
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              // 2do Lugar
-                              _PodiumItem(
-                                rank: 2,
-                                name: "Ana Silva",
-                                points: "1,980",
-                                color: const Color(0xFFC0C0C0), // Plateado
-                                height: 140,
-                                isDarkMode: isDarkMode,
-                              ),
-                              // 1er Lugar
-                              _PodiumItem(
-                                rank: 1,
-                                name: "Carlos Ruiz",
-                                points: "2,500",
-                                color: const Color(0xFFFFD700), // Dorado
-                                height: 180,
-                                isDarkMode: isDarkMode,
-                                hasCrown: true,
-                              ),
-                              // 3er Lugar
-                              _PodiumItem(
-                                rank: 3,
-                                name: "Elena Paz",
-                                points: "1,750",
-                                color: const Color(0xFFCD7F32), // Bronce
-                                height: 120,
-                                isDarkMode: isDarkMode,
-                              ),
-                            ],
-                          ),
+                Positioned(
+                  bottom: 20,
+                  left: 24,
+                  right: 24,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE3F2FD),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.15),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
                         ),
-
-                        const SizedBox(height: 40),
-
-                        // 3. LISTA DE COMPETENCIA
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 24),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-                            borderRadius: BorderRadius.circular(32),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              "Tu posición actual:",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF1976D2),
+                                fontWeight: FontWeight.w500,
                               ),
-                            ],
-                          ),
-                          child: ListView.separated(
-                            shrinkWrap: true,
-                            padding: const EdgeInsets.all(8),
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: 10,
-                            separatorBuilder: (context, index) => Divider(
-                              color: isDarkMode ? Colors.white10 : Colors.black.withOpacity(0.05),
-                              height: 1,
-                              indent: 20,
-                              endIndent: 20,
                             ),
-                            itemBuilder: (context, index) {
-                              final position = index + 4;
-                              return _RankListItem(
-                                position: position,
-                                name: "Estudiante ${index + 4}",
-                                degree: "Ingeniería Ambiental",
-                                points: "${1500 - (index * 80)}",
-                                isDarkMode: isDarkMode,
-                              );
-                            },
+                            const SizedBox(width: 8),
+                            Text(
+                              userPosition > 0 ? "#$userPosition" : "--",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: Color(0xFF1976D2),
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          "$userPoints pts",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF1976D2),
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
@@ -145,63 +226,8 @@ class RankingPage extends HookConsumerWidget {
                   ),
                 ),
               ],
-            ),
-
-            // 4. TARJETA FIJA DEL USUARIO (STICKY)
-            Positioned(
-              bottom: 20,
-              left: 24,
-              right: 24,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2FD), // Azul pastel suave
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.blue.withOpacity(0.15),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Text(
-                          "Tu posición actual:",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF1976D2),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "#24",
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: const Color(0xFF1976D2),
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      "850 pts",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: const Color(0xFF1976D2),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -216,6 +242,7 @@ class _PodiumItem extends StatelessWidget {
   final double height;
   final bool isDarkMode;
   final bool hasCrown;
+  final String? avatarUrl;
 
   const _PodiumItem({
     required this.rank,
@@ -225,6 +252,7 @@ class _PodiumItem extends StatelessWidget {
     required this.height,
     required this.isDarkMode,
     this.hasCrown = false,
+    this.avatarUrl,
   });
 
   @override
@@ -250,9 +278,14 @@ class _PodiumItem extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const CircleAvatar(
+              child: CircleAvatar(
                 backgroundColor: Colors.white24,
-                child: Icon(Icons.person, size: 40, color: Colors.grey),
+                backgroundImage: (avatarUrl != null && avatarUrl!.isNotEmpty)
+                    ? NetworkImage(avatarUrl!)
+                    : null,
+                child: (avatarUrl == null || avatarUrl!.isEmpty)
+                    ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                    : null,
               ),
             ),
             if (hasCrown)
@@ -300,7 +333,7 @@ class _PodiumItem extends StatelessWidget {
         const SizedBox(height: 8),
         Container(
           width: rank == 1 ? 80 : 70,
-          height: height - 100, // Altura proporcional
+          height: height - 100,
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             borderRadius: const BorderRadius.only(
@@ -320,6 +353,7 @@ class _RankListItem extends StatelessWidget {
   final String degree;
   final String points;
   final bool isDarkMode;
+  final String? avatarUrl;
 
   const _RankListItem({
     required this.position,
@@ -327,6 +361,7 @@ class _RankListItem extends StatelessWidget {
     required this.degree,
     required this.points,
     required this.isDarkMode,
+    this.avatarUrl,
   });
 
   @override
@@ -346,10 +381,15 @@ class _RankListItem extends StatelessWidget {
               ),
             ),
           ),
-          const CircleAvatar(
+          CircleAvatar(
             radius: 20,
             backgroundColor: Colors.grey,
-            child: Icon(Icons.person, color: Colors.white70, size: 24),
+            backgroundImage: (avatarUrl != null && avatarUrl!.isNotEmpty)
+                ? NetworkImage(avatarUrl!)
+                : null,
+            child: (avatarUrl == null || avatarUrl!.isEmpty)
+                ? const Icon(Icons.person, color: Colors.white70, size: 24)
+                : null,
           ),
           const SizedBox(width: 16),
           Expanded(

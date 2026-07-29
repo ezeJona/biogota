@@ -132,6 +132,18 @@ class ApiService {
     }
   }
 
+  // Obtener el ranking de usuarios
+  static Future<List<RankingUserRes>> getRanking() async {
+    try {
+      final List<dynamic> response = await _supabase
+          .from('ranking_usuarios')
+          .select();
+      return response.map((e) => RankingUserRes.fromJson(e)).toList();
+    } catch (e) {
+      throw Exception('Error al obtener ranking: $e');
+    }
+  }
+
 // Devuelve los subtipos que el usuario ya completó hoy
   static Future<List<String>> getSubtiposCompletadosHoy({
     required String usuarioId,

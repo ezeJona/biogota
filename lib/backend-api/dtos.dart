@@ -9,6 +9,7 @@ class AppUserRes {
     this.secondLastName,
     this.dateOfBirth,
     this.avatarUrl,
+    this.puntos = 0, // Nuevo campo
   });
 
   String id;
@@ -18,6 +19,7 @@ class AppUserRes {
   String? secondLastName;
   DateTime? dateOfBirth;
   String? avatarUrl;
+  int puntos; // Nuevo campo
 
   factory AppUserRes.fromJson(Map<String, dynamic> json) => AppUserRes(
     id: json["id"],
@@ -29,6 +31,7 @@ class AppUserRes {
         ? null
         : DateTime.parse(json["date_of_birth"]),
     avatarUrl: json["avatar_url"],
+    puntos: json["puntos"] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -39,6 +42,7 @@ class AppUserRes {
     "second_last_name": secondLastName,
     "date_of_birth": dateOfBirth?.toIso8601String(),
     "avatar_url": avatarUrl,
+    "puntos": puntos,
   };
 
   AppUserRes copyWith({
@@ -49,6 +53,7 @@ class AppUserRes {
     String? secondLastName,
     DateTime? dateOfBirth,
     String? avatarUrl,
+    int? puntos,
   }) {
     return AppUserRes(
       id: id ?? this.id,
@@ -58,6 +63,7 @@ class AppUserRes {
       secondLastName: secondLastName ?? this.secondLastName,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      puntos: puntos ?? this.puntos,
     );
   }
 }
@@ -152,6 +158,34 @@ class ImpactoGlobalRes {
     unidadesRecicladas: 0,
     kwhEnergia: 0,
     updatedAt: DateTime.now(),
+  );
+}
+
+// DTO para el Ranking
+class RankingUserRes {
+  final String id;
+  final String firstName;
+  final String firstLastName;
+  final String? avatarUrl;
+  final int puntos;
+  final int posicion;
+
+  RankingUserRes({
+    required this.id,
+    required this.firstName,
+    required this.firstLastName,
+    this.avatarUrl,
+    required this.puntos,
+    required this.posicion,
+  });
+
+  factory RankingUserRes.fromJson(Map<String, dynamic> json) => RankingUserRes(
+    id: json["id"],
+    firstName: json["first_name"],
+    firstLastName: json["first_last_name"],
+    avatarUrl: json["avatar_url"],
+    puntos: json["puntos"] ?? 0,
+    posicion: json["posicion"] ?? 0,
   );
 }
 
