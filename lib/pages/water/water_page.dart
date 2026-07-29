@@ -114,11 +114,11 @@ class WaterPage extends HookConsumerWidget {
                   const SizedBox(height: 32),
                   _ChallengeCard(
                     id: 0,
-                    title: "La Ducha Express",
+                    title: "Misión: Ducha Veloz ⚡",
                     subtitle: "+40 Litros",
                     description:
-                    "¿Te bañaste en menos de 5 minutos?",
-                    icon: Icons.shower_rounded,
+                    "¡Gánale al reloj! Intenta bañarte en lo que dura una canción. ¡Rápido y limpio!",
+                    icon: Icons.timer_rounded,
                     impact: 40,
                     isDarkMode: isDarkMode,
                     isCompleted: waterState.completadosHoy
@@ -133,11 +133,11 @@ class WaterPage extends HookConsumerWidget {
                   const SizedBox(height: 16),
                   _ChallengeCard(
                     id: 1,
-                    title: "Cierre de Grifo",
+                    title: "Escudo Anti-Goteo 🛡️",
                     subtitle: "+5 Litros",
                     description:
-                    "Cerré la llave al cepillarme o lavar platos.",
-                    icon: Icons.water_damage_rounded,
+                    "Mientras lavas tus dientes, cierra la llave. ¡Eres el escudo que detiene el desperdicio!",
+                    icon: Icons.security_rounded,
                     impact: 5,
                     isDarkMode: isDarkMode,
                     isCompleted: waterState.completadosHoy
@@ -152,11 +152,11 @@ class WaterPage extends HookConsumerWidget {
                   const SizedBox(height: 16),
                   _ChallengeCard(
                     id: 2,
-                    title: "El Guardián del Agua",
+                    title: "Detective de Fugas 🔍",
                     subtitle: "+20 Litros",
                     description:
-                    "Reporté una fuga o cerré llaves en la feria.",
-                    icon: Icons.volunteer_activism_rounded,
+                    "¡Ojos abiertos! Si ves una llave goteando o abierta en la feria, ¡avísale a un adulto!",
+                    icon: Icons.search_rounded,
                     impact: 20,
                     isDarkMode: isDarkMode,
                     isCompleted: waterState.completadosHoy

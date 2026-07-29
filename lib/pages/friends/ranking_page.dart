@@ -49,7 +49,7 @@ class RankingPage extends HookConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Tabla de Posiciones",
+                            "Ranking de Super-Héroes",
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w900,
@@ -195,7 +195,7 @@ class RankingPage extends HookConsumerWidget {
                         Row(
                           children: [
                             const Text(
-                              "Tu posición actual:",
+                              "Tu Rango de Héroe:",
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF1976D2),

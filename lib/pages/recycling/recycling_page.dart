@@ -93,9 +93,9 @@ class RecyclingPage extends HookConsumerWidget {
                   const SizedBox(height: 32),
                   
                   _IncrementalChallengeCard(
-                    title: "PET y Aluminio",
+                    title: "Cazador de Tesoros 💎",
                     subtitle: "+84g CO₂ por pieza",
-                    icon: Icons.liquor_rounded,
+                    icon: Icons.auto_awesome_rounded,
                     count: petCount.value,
                     isDarkMode: isDarkMode,
                     onIncrement: () => petCount.value++,
@@ -112,10 +112,10 @@ class RecyclingPage extends HookConsumerWidget {
                   const SizedBox(height: 16),
                   
                   _QuickActionChallengeCard(
-                    title: "Cero Desechables",
+                    title: "Mi Super-Termo 🥤",
                     subtitle: "+120g CO₂",
-                    description: "Traje mi termo reutilizable",
-                    icon: Icons.eco_rounded,
+                    description: "¡Usa tu botella mágica y no uses vasos!",
+                    icon: Icons.local_drink_rounded,
                     isDarkMode: isDarkMode,
                     isCompleted: recyclingState.completadosHoy.contains('cero_desechables'),
                     onTap: () {

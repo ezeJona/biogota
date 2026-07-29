@@ -101,9 +101,9 @@ class EnergyPage extends HookConsumerWidget {
                   ),
 
                   _ChallengeSwitchCard(
-                    title: "Vampiros Eléctricos",
+                    title: "Caza-Vampiros 🧛‍♂️",
                     impact: "+0.2 kWh",
-                    icon: Icons.power_rounded,
+                    icon: Icons.flash_off_rounded,
                     isActive: energyState.completadosHoy.contains('vampiros_electricos'),
                     isDarkMode: isDarkMode,
                     onChanged: (val) {
@@ -115,9 +115,9 @@ class EnergyPage extends HookConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   _ChallengeSwitchCard(
-                    title: "Luz Natural",
+                    title: "Amigo del Sol ☀️",
                     impact: "+0.2 kWh",
-                    icon: Icons.wb_sunny_outlined,
+                    icon: Icons.wb_sunny_rounded,
                     isActive: energyState.completadosHoy.contains('luz_natural'),
                     isDarkMode: isDarkMode,
                     onChanged: (val) {
@@ -129,9 +129,9 @@ class EnergyPage extends HookConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   _ChallengeSwitchCard(
-                    title: "Modo Eco Activo",
+                    title: "Modo Ninja 🥷",
                     impact: energyState.completadosHoy.contains('modo_eco') ? "Reto ya validado hoy" : "+0.2 kWh",
-                    icon: Icons.eco_outlined,
+                    icon: Icons.visibility_off,
                     isActive: energyState.completadosHoy.contains('modo_eco'),
                     isDarkMode: isDarkMode,
                     isDisabled: energyState.completadosHoy.contains('modo_eco'),
