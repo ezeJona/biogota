@@ -45,6 +45,7 @@ class RecyclingNotifier extends StateNotifier<RecyclingState> {
   static const Map<String, int> _co2PorSubtipo = {
     'pet_aluminio': 84,
     'cero_desechables': 120,
+    'bolsa_reutilizable': 45,
   };
 
   RecyclingNotifier(this._usuarioId, this._ref) : super(const RecyclingState()) {

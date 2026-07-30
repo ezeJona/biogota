@@ -95,6 +95,7 @@ class RecyclingPage extends HookConsumerWidget {
                   _IncrementalChallengeCard(
                     title: "Cazador de Tesoros 💎",
                     subtitle: "+84g CO₂ por pieza",
+                    description: "¡Encuentra y recicla botellas, latas o papel! Cada objeto cuenta para limpiar nuestro entorno.",
                     icon: Icons.auto_awesome_rounded,
                     count: petCount.value,
                     isDarkMode: isDarkMode,
@@ -114,7 +115,7 @@ class RecyclingPage extends HookConsumerWidget {
                   _QuickActionChallengeCard(
                     title: "Mi Super-Termo 🥤",
                     subtitle: "+120g CO₂",
-                    description: "¡Usa tu botella mágica y no uses vasos!",
+                    description: "¡Lleva tu termo siempre contigo y evita usar vasos desechables!",
                     icon: Icons.local_drink_rounded,
                     isDarkMode: isDarkMode,
                     isCompleted: recyclingState.completadosHoy.contains('cero_desechables'),
@@ -122,6 +123,23 @@ class RecyclingPage extends HookConsumerWidget {
                       if (!recyclingState.completadosHoy.contains('cero_desechables')) {
                         HapticFeedback.heavyImpact();
                         recyclingNotifier.completarReto('cero_desechables');
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _QuickActionChallengeCard(
+                    title: "Bolsa Infinita ",
+                    subtitle: "+45g CO₂",
+                    description: "¡Usa tu bolsa de tela o carrito y evita el plástico al comprar!",
+                    icon: Icons.shopping_bag_rounded,
+                    isDarkMode: isDarkMode,
+                    isCompleted: recyclingState.completadosHoy.contains('bolsa_reutilizable'),
+                    onTap: () {
+                      if (!recyclingState.completadosHoy.contains('bolsa_reutilizable')) {
+                        HapticFeedback.heavyImpact();
+                        recyclingNotifier.completarReto('bolsa_reutilizable');
                       }
                     },
                   ),
@@ -214,6 +232,7 @@ class _EcoImpactCard extends StatelessWidget {
 class _IncrementalChallengeCard extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String description;
   final IconData icon;
   final int count;
   final bool isDarkMode;
@@ -224,6 +243,7 @@ class _IncrementalChallengeCard extends StatelessWidget {
   const _IncrementalChallengeCard({
     required this.title,
     required this.subtitle,
+    required this.description,
     required this.icon,
     required this.count,
     required this.isDarkMode,
@@ -277,10 +297,20 @@ class _IncrementalChallengeCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  subtitle,
+                  description,
                   style: TextStyle(
                     fontSize: 12,
                     color: primaryTextColor.withOpacity(0.5),
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: accentColor,
                   ),
                 ),
               ],
@@ -357,12 +387,22 @@ class _QuickActionChallengeCard extends StatelessWidget {
     final primaryTextColor = isDarkMode ? Colors.white : Colors.black87;
     final accentColor = const Color(0xFF4CAF50);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(24),
-      ),
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      opacity: isCompleted ? 0.6 : 1.0,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
       child: Row(
         children: [
           Container(
@@ -398,8 +438,8 @@ class _QuickActionChallengeCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
                     color: accentColor,
                   ),
                 ),
@@ -407,21 +447,33 @@ class _QuickActionChallengeCard extends StatelessWidget {
             ),
           ),
           GestureDetector(
-            onTap: onTap,
-            child: Container(
+            onTap: isCompleted ? null : onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 400),
               width: 44,
               height: 44,
               decoration: BoxDecoration(
                 color: isCompleted ? Colors.green.shade50 : accentColor,
                 shape: BoxShape.circle,
+                boxShadow: isCompleted 
+                    ? null 
+                    : [
+                        BoxShadow(
+                          color: accentColor.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
               ),
               child: Icon(
                 isCompleted ? Icons.check_rounded : Icons.add_rounded,
                 color: isCompleted ? Colors.green : Colors.white,
+                size: 26,
               ),
             ),
           ),
         ],
+      ),
       ),
     );
   }
