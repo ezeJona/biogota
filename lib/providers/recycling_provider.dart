@@ -48,6 +48,11 @@ class RecyclingNotifier extends StateNotifier<RecyclingState> {
     'bolsa_reutilizable': 45,
   };
 
+  // Definir cuáles retos son repetibles
+  static const Set<String> _retosRepetibles = {
+    'pet_aluminio',
+  };
+
   RecyclingNotifier(this._usuarioId, this._ref) : super(const RecyclingState()) {
     cargarRetosDeHoy();
   }
@@ -77,6 +82,10 @@ class RecyclingNotifier extends StateNotifier<RecyclingState> {
   }
 
   Future<void> completarReto(String subtipo, {int cantidad = 1}) async {
+    final esRepetible = _retosRepetibles.contains(subtipo);
+    final yaCompletado = state.completadosHoy.contains(subtipo);
+
+    if (!esRepetible && yaCompletado) return;
     if (state.cargando) return;
 
     final co2Extra = (_co2PorSubtipo[subtipo] ?? 0) * cantidad;
@@ -101,11 +110,26 @@ class RecyclingNotifier extends StateNotifier<RecyclingState> {
       }
       
       _ref.invalidate(impactoGlobalProvider);
-      _ref.read(appUserProvider.notifier).fetch(); // Actualizar puntos
+      _ref.read(appUserProvider.notifier).fetch(); 
       
     } catch (e) {
-      cargarRetosDeHoy(); // Revertir cargando de nuevo
-      state = state.copyWith(error: e.toString());
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      if (errorMsg.contains('ya la completaste')) {
+        // Mantenemos estado ya que el servidor confirma que está hecho
+        state = state.copyWith(error: errorMsg);
+      } else {
+        // Revertir
+        final nuevaLista = List<String>.from(state.completadosHoy);
+        for (int i = 0; i < cantidad; i++) {
+          nuevaLista.remove(subtipo);
+        }
+        state = state.copyWith(
+          completadosHoy: nuevaLista,
+          co2Hoy: (state.co2Hoy - co2Extra).clamp(0, 99999),
+          materialesHoy: (state.materialesHoy - cantidad).clamp(0, 999),
+          error: errorMsg,
+        );
+      }
     }
   }
 }

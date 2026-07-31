@@ -56,6 +56,10 @@ class RecyclingPage extends HookConsumerWidget {
         ? [const Color(0xFF1E1E1E), const Color(0xFF121212)]
         : [const Color(0xFF4CAF50), const Color(0xFF2E7D32)];
 
+    int countOccurrences(String subtipo) {
+      return recyclingState.completadosHoy.where((s) => s == subtipo).length;
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Column(
@@ -98,6 +102,7 @@ class RecyclingPage extends HookConsumerWidget {
                     description: "¡Encuentra y recicla botellas, latas o papel! Cada objeto cuenta para limpiar nuestro entorno.",
                     icon: Icons.auto_awesome_rounded,
                     count: petCount.value,
+                    registeredCount: countOccurrences('pet_aluminio'),
                     isDarkMode: isDarkMode,
                     onIncrement: () => petCount.value++,
                     onDecrement: () => petCount.value = math.max(0, petCount.value - 1),
@@ -119,28 +124,28 @@ class RecyclingPage extends HookConsumerWidget {
                     icon: Icons.local_drink_rounded,
                     isDarkMode: isDarkMode,
                     isCompleted: recyclingState.completadosHoy.contains('cero_desechables'),
+                    isRepeatable: false,
+                    count: countOccurrences('cero_desechables'),
                     onTap: () {
-                      if (!recyclingState.completadosHoy.contains('cero_desechables')) {
-                        HapticFeedback.heavyImpact();
-                        recyclingNotifier.completarReto('cero_desechables');
-                      }
+                      HapticFeedback.heavyImpact();
+                      recyclingNotifier.completarReto('cero_desechables');
                     },
                   ),
 
                   const SizedBox(height: 16),
 
                   _QuickActionChallengeCard(
-                    title: "Bolsa Infinita ",
+                    title: "Bolsa Infinita 🛍️",
                     subtitle: "+45g CO₂",
                     description: "¡Usa tu bolsa de tela o carrito y evita el plástico al comprar!",
                     icon: Icons.shopping_bag_rounded,
                     isDarkMode: isDarkMode,
                     isCompleted: recyclingState.completadosHoy.contains('bolsa_reutilizable'),
+                    isRepeatable: false,
+                    count: countOccurrences('bolsa_reutilizable'),
                     onTap: () {
-                      if (!recyclingState.completadosHoy.contains('bolsa_reutilizable')) {
-                        HapticFeedback.heavyImpact();
-                        recyclingNotifier.completarReto('bolsa_reutilizable');
-                      }
+                      HapticFeedback.heavyImpact();
+                      recyclingNotifier.completarReto('bolsa_reutilizable');
                     },
                   ),
                   
@@ -235,6 +240,7 @@ class _IncrementalChallengeCard extends StatelessWidget {
   final String description;
   final IconData icon;
   final int count;
+  final int registeredCount;
   final bool isDarkMode;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
@@ -246,6 +252,7 @@ class _IncrementalChallengeCard extends StatelessWidget {
     required this.description,
     required this.icon,
     required this.count,
+    required this.registeredCount,
     required this.isDarkMode,
     required this.onIncrement,
     required this.onDecrement,
@@ -273,14 +280,39 @@ class _IncrementalChallengeCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F8E9), // Soft green/yellow pastel
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(Icons.recycling_rounded, color: Color(0xFF8BC34A), size: 28),
+          Stack(
+            alignment: Alignment.topRight,
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F8E9), 
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(Icons.recycling_rounded, color: Color(0xFF8BC34A), size: 28),
+              ),
+              if (registeredCount > 0)
+                Transform.translate(
+                  offset: const Offset(8, -8),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: cardColor, width: 2),
+                    ),
+                    child: Text(
+                      "x$registeredCount",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -369,6 +401,8 @@ class _QuickActionChallengeCard extends StatelessWidget {
   final IconData icon;
   final bool isDarkMode;
   final bool isCompleted;
+  final bool isRepeatable;
+  final int count;
   final VoidCallback onTap;
 
   const _QuickActionChallengeCard({
@@ -378,6 +412,8 @@ class _QuickActionChallengeCard extends StatelessWidget {
     required this.icon,
     required this.isDarkMode,
     required this.isCompleted,
+    required this.isRepeatable,
+    required this.count,
     required this.onTap,
   });
 
@@ -389,7 +425,7 @@ class _QuickActionChallengeCard extends StatelessWidget {
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 300),
-      opacity: isCompleted ? 0.6 : 1.0,
+      opacity: (isCompleted && !isRepeatable) ? 0.6 : 1.0,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -405,14 +441,39 @@ class _QuickActionChallengeCard extends StatelessWidget {
         ),
       child: Row(
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(icon, color: accentColor, size: 28),
+          Stack(
+            alignment: Alignment.topRight,
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(icon, color: accentColor, size: 28),
+              ),
+              if (isRepeatable && count > 0)
+                Transform.translate(
+                  offset: const Offset(8, -8),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: cardColor, width: 2),
+                    ),
+                    child: Text(
+                      "x$count",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -447,15 +508,15 @@ class _QuickActionChallengeCard extends StatelessWidget {
             ),
           ),
           GestureDetector(
-            onTap: isCompleted ? null : onTap,
+            onTap: (isCompleted && !isRepeatable) ? null : onTap,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 400),
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: isCompleted ? Colors.green.shade50 : accentColor,
+                color: (isCompleted && !isRepeatable) ? Colors.green.shade50 : accentColor,
                 shape: BoxShape.circle,
-                boxShadow: isCompleted 
+                boxShadow: (isCompleted && !isRepeatable)
                     ? null 
                     : [
                         BoxShadow(
@@ -466,8 +527,8 @@ class _QuickActionChallengeCard extends StatelessWidget {
                       ],
               ),
               child: Icon(
-                isCompleted ? Icons.check_rounded : Icons.add_rounded,
-                color: isCompleted ? Colors.green : Colors.white,
+                (isCompleted && !isRepeatable) ? Icons.check_rounded : Icons.add_rounded,
+                color: (isCompleted && !isRepeatable) ? Colors.green : Colors.white,
                 size: 26,
               ),
             ),

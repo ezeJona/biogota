@@ -48,6 +48,10 @@ class EnergyPage extends HookConsumerWidget {
       }
     });
 
+    int countOccurrences(String subtipo) {
+      return energyState.completadosHoy.where((s) => s == subtipo).length;
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Column(
@@ -106,6 +110,8 @@ class EnergyPage extends HookConsumerWidget {
                     impact: "+0.2 kWh",
                     icon: Icons.flash_off_rounded,
                     isCompleted: energyState.completadosHoy.contains('vampiros_electricos'),
+                    isRepeatable: false,
+                    count: countOccurrences('vampiros_electricos'),
                     isDarkMode: isDarkMode,
                     onTap: () {
                       HapticFeedback.mediumImpact();
@@ -119,6 +125,8 @@ class EnergyPage extends HookConsumerWidget {
                     impact: "+0.2 kWh",
                     icon: Icons.wb_sunny_rounded,
                     isCompleted: energyState.completadosHoy.contains('luz_natural'),
+                    isRepeatable: false,
+                    count: countOccurrences('luz_natural'),
                     isDarkMode: isDarkMode,
                     onTap: () {
                       HapticFeedback.lightImpact();
@@ -132,6 +140,8 @@ class EnergyPage extends HookConsumerWidget {
                     impact: "+0.2 kWh",
                     icon: Icons.visibility_off,
                     isCompleted: energyState.completadosHoy.contains('modo_eco'),
+                    isRepeatable: false,
+                    count: countOccurrences('modo_eco'),
                     isDarkMode: isDarkMode,
                     onTap: () {
                       HapticFeedback.mediumImpact();
@@ -230,7 +240,7 @@ class _EnergyImpactCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              "¡Equivale a cargar 50 smartphones por completo! 📱",
+              "¡Equivale a cargar 50 smartphones por completo!",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -310,6 +320,8 @@ class _EnergyChallengeCard extends StatelessWidget {
   final String impact;
   final IconData icon;
   final bool isCompleted;
+  final bool isRepeatable;
+  final int count;
   final bool isDarkMode;
   final VoidCallback onTap;
 
@@ -319,6 +331,8 @@ class _EnergyChallengeCard extends StatelessWidget {
     required this.impact,
     required this.icon,
     required this.isCompleted,
+    required this.isRepeatable,
+    required this.count,
     required this.isDarkMode,
     required this.onTap,
   });
@@ -332,7 +346,7 @@ class _EnergyChallengeCard extends StatelessWidget {
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 300),
-      opacity: isCompleted ? 0.6 : 1.0,
+      opacity: (isCompleted && !isRepeatable) ? 0.6 : 1.0,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -348,19 +362,44 @@ class _EnergyChallengeCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Icono
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Icon(
-                icon,
-                color: accentColor,
-                size: 26,
-              ),
+            // Icono con Badge si es repetible
+            Stack(
+              alignment: Alignment.topRight,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: accentColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: accentColor,
+                    size: 26,
+                  ),
+                ),
+                if (isRepeatable && count > 0)
+                  Transform.translate(
+                    offset: const Offset(8, -8),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: cardColor, width: 2),
+                      ),
+                      child: Text(
+                        "x$count",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 16),
             
@@ -403,17 +442,17 @@ class _EnergyChallengeCard extends StatelessWidget {
 
             // Botón de Acción
             GestureDetector(
-              onTap: isCompleted ? null : onTap,
+              onTap: (isCompleted && !isRepeatable) ? null : onTap,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 400),
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isCompleted
+                  color: (isCompleted && !isRepeatable)
                       ? Colors.green.shade50
                       : accentColor,
                   shape: BoxShape.circle,
-                  boxShadow: isCompleted
+                  boxShadow: (isCompleted && !isRepeatable)
                       ? null
                       : [
                     BoxShadow(
@@ -424,8 +463,8 @@ class _EnergyChallengeCard extends StatelessWidget {
                   ],
                 ),
                 child: Icon(
-                  isCompleted ? Icons.check_rounded : Icons.add_rounded,
-                  color: isCompleted ? Colors.green : Colors.white,
+                  (isCompleted && !isRepeatable) ? Icons.check_rounded : Icons.add_rounded,
+                  color: (isCompleted && !isRepeatable) ? Colors.green : Colors.white,
                   size: 26,
                 ),
               ),
