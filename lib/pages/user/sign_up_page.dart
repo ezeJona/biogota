@@ -185,23 +185,29 @@ class _SuccessView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Icon(Icons.mark_email_read_rounded, color: Colors.green, size: 80),
+        const Icon(Icons.check_circle_outline_rounded, color: Colors.green, size: 80),
         const SizedBox(height: 24),
         Text(
-          "¡Casi listo!",
+          "¡Registro exitoso!",
           style: BiogotaTextStyle.title4,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         Text(
-          "Hemos enviado un enlace de activación a:\n$email\n\nPor favor, actívalo para empezar tu aventura.",
+          "Tu cuenta ha sido creada correctamente.\n\nEl siguiente paso es iniciar sesión con las credenciales que acabas de crear.",
           textAlign: TextAlign.center,
           style: BiogotaTextStyle.body3.copyWith(color: Colors.black54),
         ),
         const SizedBox(height: 32),
-        TextButton(
+        ElevatedButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Volver al inicio", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF2E7D32),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: const Text("Ir al Login", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         ),
       ],
     );

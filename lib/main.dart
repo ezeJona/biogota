@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Biogota',
+      title: 'biogota',
       theme: AppTheme.theme,
       initialRoute: '/start',
       routes: {

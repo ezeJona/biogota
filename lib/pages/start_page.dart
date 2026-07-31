@@ -11,7 +11,7 @@ class StartPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final checkSessionState = useCallback(() async {
-      await Future.delayed(const Duration(milliseconds: 1500));
+      await Future.delayed(const Duration(milliseconds: 3000));
       final authUserRes = ref.read(authUserProvider.notifier).checkSession();
       if (!context.mounted) return;
       if (authUserRes != null) {
@@ -28,17 +28,62 @@ class StartPage extends HookConsumerWidget {
       return;
     }, []);
 
-    return const Scaffold(
-      backgroundColor: BiogotaColors.primary,
-      body: Center(
-        child: Text(
-          "BIOGOTA",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 40,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 4,
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              BiogotaColors.primary,
+              Color(0xFF0a2421), // Tono aún más profundo para el degradado orgánico
+            ],
           ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Logo del colegio
+            Image.asset(
+              'assets/logo_college.png',
+              height: 180,
+              filterQuality: FilterQuality.high,
+            ),
+            const SizedBox(height: 40),
+            // Texto BIOGOTA
+            const Text(
+              "BIOGOTA",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 48,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 8,
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Subtexto o lema opcional
+            Text(
+              "MOVILIDAD SOSTENIBLE",
+              style: TextStyle(
+                color: BiogotaColors.primaryLight.withOpacity(0.8),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 4,
+              ),
+            ),
+            const SizedBox(height: 60),
+            // Indicador de carga sutil
+            const SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(
+                color: BiogotaColors.primaryLight,
+                strokeWidth: 3,
+              ),
+            ),
+          ],
         ),
       ),
     );
