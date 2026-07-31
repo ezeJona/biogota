@@ -55,6 +55,7 @@ class SetupProfilePage extends HookConsumerWidget {
               firstLastName: firstLastNameController.text.trim(),
               secondLastName: secondLastNameController.text.trim(),
               dateOfBirth: dateOfBirth.value,
+              avatarUrl: null, // Avatar estático por ahora
             ),
           );
           ref.read(appUserProvider.notifier).set(createdUser);
@@ -113,7 +114,7 @@ class SetupProfilePage extends HookConsumerWidget {
                       child: Icon(
                         Icons.person_add_rounded,
                         size: 150,
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                       ),
                     ),
                     Center(
@@ -123,7 +124,7 @@ class SetupProfilePage extends HookConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(

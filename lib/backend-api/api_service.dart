@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'dtos.dart';
@@ -85,6 +86,24 @@ class ApiService {
       throw Exception(e.message);
     } catch (e) {
       throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
+  static Future<String?> uploadAvatar(String userId, String filePath) async {
+    try {
+      final file = File(filePath);
+      final fileExtension = filePath.split('.').last;
+      final path = 'avatars/$userId.$fileExtension';
+
+      await _supabase.storage.from('profiles').upload(
+            path,
+            file,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      return _supabase.storage.from('profiles').getPublicUrl(path);
+    } catch (e) {
+      throw Exception('Error al subir avatar: $e');
     }
   }
 
