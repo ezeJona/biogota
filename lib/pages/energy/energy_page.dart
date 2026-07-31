@@ -100,46 +100,42 @@ class EnergyPage extends HookConsumerWidget {
                     ),
                   ),
 
-                  _ChallengeSwitchCard(
+                  _EnergyChallengeCard(
                     title: "Caza-Vampiros 🧛‍♂️",
+                    description: "¡Desconecta todo! Cargadores y aparatos que no uses. Evita el consumo 'vampiro' que chupa energía en silencio.",
                     impact: "+0.2 kWh",
                     icon: Icons.flash_off_rounded,
-                    isActive: energyState.completadosHoy.contains('vampiros_electricos'),
+                    isCompleted: energyState.completadosHoy.contains('vampiros_electricos'),
                     isDarkMode: isDarkMode,
-                    onChanged: (val) {
-                      if (!energyState.completadosHoy.contains('vampiros_electricos')) {
-                        HapticFeedback.mediumImpact();
-                        energyNotifier.completarReto('vampiros_electricos');
-                      }
+                    onTap: () {
+                      HapticFeedback.mediumImpact();
+                      energyNotifier.completarReto('vampiros_electricos');
                     },
                   ),
                   const SizedBox(height: 16),
-                  _ChallengeSwitchCard(
+                  _EnergyChallengeCard(
                     title: "Amigo del Sol ☀️",
+                    description: "Abre las cortinas y aprovecha la luz natural. Apaga los focos y deja que el sol ilumine tu hogar.",
                     impact: "+0.2 kWh",
                     icon: Icons.wb_sunny_rounded,
-                    isActive: energyState.completadosHoy.contains('luz_natural'),
+                    isCompleted: energyState.completadosHoy.contains('luz_natural'),
                     isDarkMode: isDarkMode,
-                    onChanged: (val) {
-                      if (!energyState.completadosHoy.contains('luz_natural')) {
-                        HapticFeedback.lightImpact();
-                        energyNotifier.completarReto('luz_natural');
-                      }
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      energyNotifier.completarReto('luz_natural');
                     },
                   ),
                   const SizedBox(height: 16),
-                  _ChallengeSwitchCard(
+                  _EnergyChallengeCard(
                     title: "Modo Ninja 🥷",
-                    impact: energyState.completadosHoy.contains('modo_eco') ? "Reto ya validado hoy" : "+0.2 kWh",
+                    description: "Activa el ahorro de energía en tus dispositivos. ¡Sé eficiente y reduce tu huella eléctrica!",
+                    impact: "+0.2 kWh",
                     icon: Icons.visibility_off,
-                    isActive: energyState.completadosHoy.contains('modo_eco'),
+                    isCompleted: energyState.completadosHoy.contains('modo_eco'),
                     isDarkMode: isDarkMode,
-                    isDisabled: energyState.completadosHoy.contains('modo_eco'),
-                    onChanged: (val) {
-                      if (!energyState.completadosHoy.contains('modo_eco')) {
-                        HapticFeedback.mediumImpact();
-                        energyNotifier.completarReto('modo_eco');
-                      }
+                    onTap: () {
+                      HapticFeedback.mediumImpact();
+                      energyNotifier.completarReto('modo_eco');
                     },
                   ),
                   const SizedBox(height: 40),
@@ -308,23 +304,23 @@ class LightningBoltPainter extends CustomPainter {
   bool shouldRepaint(covariant LightningBoltPainter oldDelegate) => oldDelegate.progress != progress;
 }
 
-class _ChallengeSwitchCard extends StatelessWidget {
+class _EnergyChallengeCard extends StatelessWidget {
   final String title;
+  final String description;
   final String impact;
   final IconData icon;
-  final bool isActive;
+  final bool isCompleted;
   final bool isDarkMode;
-  final bool isDisabled;
-  final ValueChanged<bool> onChanged;
+  final VoidCallback onTap;
 
-  const _ChallengeSwitchCard({
+  const _EnergyChallengeCard({
     required this.title,
+    required this.description,
     required this.impact,
     required this.icon,
-    required this.isActive,
+    required this.isCompleted,
     required this.isDarkMode,
-    this.isDisabled = false,
-    required this.onChanged,
+    required this.onTap,
   });
 
   @override
@@ -336,9 +332,9 @@ class _ChallengeSwitchCard extends StatelessWidget {
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 300),
-      opacity: isDisabled ? 0.6 : 1.0,
+      opacity: isCompleted ? 0.6 : 1.0,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(24),
@@ -352,13 +348,13 @@ class _ChallengeSwitchCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Lado Izquierdo: Contenedor circular e icono
+            // Icono
             Container(
               width: 52,
               height: 52,
               decoration: BoxDecoration(
                 color: accentColor.withOpacity(0.1),
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Icon(
                 icon,
@@ -368,7 +364,7 @@ class _ChallengeSwitchCard extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             
-            // Centro: Título e Impacto
+            // Texto
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,40 +379,57 @@ class _ChallengeSwitchCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: secondaryTextColor,
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
                     impact,
                     style: TextStyle(
                       fontSize: 13,
-                      color: secondaryTextColor,
+                      fontWeight: FontWeight.w900,
+                      color: accentColor,
                     ),
                   ),
                 ],
               ),
             ),
             
-            // Lado Derecho: Switch o estado bloqueado
-            if (isDisabled)
-              Container(
-                padding: const EdgeInsets.all(4),
+            const SizedBox(width: 8),
+
+            // Botón de Acción
+            GestureDetector(
+              onTap: isCompleted ? null : onTap,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 400),
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: isCompleted
+                      ? Colors.green.shade50
+                      : accentColor,
                   shape: BoxShape.circle,
+                  boxShadow: isCompleted
+                      ? null
+                      : [
+                    BoxShadow(
+                      color: accentColor.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
                 ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: Colors.green,
-                  size: 24,
-                ),
-              )
-            else
-              Transform.scale(
-                scale: 0.9,
-                child: Switch.adaptive(
-                  value: isActive,
-                  activeColor: accentColor,
-                  activeTrackColor: accentColor.withOpacity(0.3),
-                  onChanged: onChanged,
+                child: Icon(
+                  isCompleted ? Icons.check_rounded : Icons.add_rounded,
+                  color: isCompleted ? Colors.green : Colors.white,
+                  size: 26,
                 ),
               ),
+            ),
           ],
         ),
       ),
