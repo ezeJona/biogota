@@ -89,16 +89,18 @@ class WaterPage extends HookConsumerWidget {
             },
           ),
           Expanded(
-            child: waterState.cargando && waterState.completadosHoy.isEmpty
-            // Solo bloquea la UI en la carga inicial, no en cada acción
-                ? const Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
+            child: SingleChildScrollView(
               controller: scrollController,
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(
                   horizontal: 24, vertical: 20),
               child: Column(
                 children: [
+                  if (waterState.cargando && waterState.completadosHoy.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 20),
+                      child: CircularProgressIndicator(),
+                    ),
                   AnimatedBuilder(
                     animation: waveController,
                     builder: (context, child) {

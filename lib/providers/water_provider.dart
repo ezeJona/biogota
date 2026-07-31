@@ -2,7 +2,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../backend-api/api_service.dart';
 import 'auth_user.dart';
+import 'app_user.dart';
 import 'impacto_global_provider.dart';
+import 'ranking_provider.dart';
 
 // Estado del módulo de agua
 class WaterState {
@@ -99,21 +101,20 @@ class WaterNotifier extends StateNotifier<WaterState> {
     final esRepetible = _retosRepetibles.contains(subtipo);
     final yaCompletado = state.completadosHoy.contains(subtipo);
 
-    // Si no es repetible y ya se completó, no hacer nada
     if (!esRepetible && yaCompletado) return;
-    
-    // Evitar doble tap mientras procesa
     if (state.cargando) return;
 
-    // Optimistic update — actualiza UI antes de esperar la BD
     final litrosExtra = _litrosPorSubtipo[subtipo] ?? 0;
     final co2Extra = _co2PorSubtipo[subtipo] ?? 0;
 
-    state = state.copyWith(
-      completadosHoy: [...state.completadosHoy, subtipo],
-      litrosHoy: state.litrosHoy + litrosExtra,
-      co2Hoy: state.co2Hoy + co2Extra,
-    );
+    // Optimistic Update
+    if (!state.completadosHoy.contains(subtipo) || esRepetible) {
+      state = state.copyWith(
+        completadosHoy: [...state.completadosHoy, subtipo],
+        litrosHoy: state.litrosHoy + litrosExtra,
+        co2Hoy: state.co2Hoy + co2Extra,
+      );
+    }
 
     try {
       await ApiService.registrarAccion(
@@ -122,33 +123,32 @@ class WaterNotifier extends StateNotifier<WaterState> {
         usuarioId: _usuarioId,
       );
       
-      // FORZAR ACTUALIZACIÓN DEL IMPACTO GLOBAL
-      // Esto hace que el Home se actualice inmediatamente para este usuario
       _ref.invalidate(impactoGlobalProvider);
+      _ref.invalidate(rankingProvider);
+      _ref.read(appUserProvider.notifier).fetch(); 
       
     } catch (e) {
-      // Revertir si la BD rechaza
-      final nuevaLista = List<String>.from(state.completadosHoy);
-      // Remover la última instancia agregada del subtipo
-      for (int i = nuevaLista.length - 1; i >= 0; i--) {
-        if (nuevaLista[i] == subtipo) {
-          nuevaLista.removeAt(i);
-          break;
-        }
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      if (errorMsg.contains('ya la completaste')) {
+        // El servidor confirma que ya está hecho, mantenemos el estado bloqueado
+        state = state.copyWith(error: errorMsg);
+      } else {
+        // Error real de red, revertimos
+        final nuevaLista = List<String>.from(state.completadosHoy);
+        nuevaLista.remove(subtipo);
+        state = state.copyWith(
+          completadosHoy: nuevaLista,
+          litrosHoy: (state.litrosHoy - litrosExtra).clamp(0, 999),
+          co2Hoy: (state.co2Hoy - co2Extra).clamp(0, 99999),
+          error: errorMsg,
+        );
       }
-
-      state = state.copyWith(
-        completadosHoy: nuevaLista,
-        litrosHoy: state.litrosHoy - litrosExtra,
-        co2Hoy: state.co2Hoy - co2Extra,
-        error: e.toString(),
-      );
     }
   }
 }
 
 final waterProvider =
-StateNotifierProvider.autoDispose<WaterNotifier, WaterState>((ref) {
+StateNotifierProvider<WaterNotifier, WaterState>((ref) {
   final authUser = ref.watch(authUserProvider);
   return WaterNotifier(authUser?.id ?? '', ref);
 });

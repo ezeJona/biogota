@@ -80,13 +80,16 @@ class RecyclingPage extends HookConsumerWidget {
           ),
           
           Expanded(
-            child: recyclingState.cargando && recyclingState.completadosHoy.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
+            child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 children: [
+                  if (recyclingState.cargando && recyclingState.completadosHoy.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 20),
+                      child: CircularProgressIndicator(),
+                    ),
                   _EcoImpactCard(
                     isDarkMode: isDarkMode,
                     progress: recyclingState.progreso,

@@ -98,15 +98,8 @@ class EnergyNotifier extends StateNotifier<EnergyState> {
     } catch (e) {
       final errorMsg = e.toString().replaceAll('Exception: ', '');
       if (errorMsg.contains('ya la completaste')) {
-        // Si ya está en DB, nos aseguramos que aparezca como completado
-        if (!state.completadosHoy.contains(subtipo)) {
-          state = state.copyWith(
-            completadosHoy: [...state.completadosHoy, subtipo],
-            error: errorMsg,
-          );
-        } else {
-          state = state.copyWith(error: errorMsg);
-        }
+        // Mantenemos estado ya que el servidor confirma que está hecho
+        state = state.copyWith(error: errorMsg);
       } else {
         // Error real, revertir actualización optimista
         final nuevaLista = List<String>.from(state.completadosHoy);
@@ -123,7 +116,7 @@ class EnergyNotifier extends StateNotifier<EnergyState> {
 }
 
 final energyProvider =
-StateNotifierProvider.autoDispose<EnergyNotifier, EnergyState>((ref) {
+StateNotifierProvider<EnergyNotifier, EnergyState>((ref) {
   final authUser = ref.watch(authUserProvider);
   return EnergyNotifier(authUser?.id ?? '', ref);
 });

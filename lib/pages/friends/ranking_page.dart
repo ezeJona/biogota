@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../providers/app_user.dart';
-
 import '../../providers/ranking_provider.dart';
+import '../../backend-api/dtos.dart';
 
 class RankingPage extends HookConsumerWidget {
   final bool isDarkMode;

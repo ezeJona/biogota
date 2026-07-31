@@ -135,7 +135,7 @@ class RecyclingNotifier extends StateNotifier<RecyclingState> {
 }
 
 final recyclingProvider =
-StateNotifierProvider.autoDispose<RecyclingNotifier, RecyclingState>((ref) {
+StateNotifierProvider<RecyclingNotifier, RecyclingState>((ref) {
   final authUser = ref.watch(authUserProvider);
   return RecyclingNotifier(authUser?.id ?? '', ref);
 });

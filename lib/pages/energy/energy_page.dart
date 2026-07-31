@@ -74,13 +74,16 @@ class EnergyPage extends HookConsumerWidget {
           ),
           
           Expanded(
-            child: energyState.cargando && energyState.completadosHoy.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
+            child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: Column(
                 children: [
+                  if (energyState.cargando && energyState.completadosHoy.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 20),
+                      child: CircularProgressIndicator(),
+                    ),
                   _EnergyImpactCard(
                     isDarkMode: isDarkMode,
                     progress: energyState.progreso,
